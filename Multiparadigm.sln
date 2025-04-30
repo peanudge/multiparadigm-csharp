@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{884EEC3B-31C4-4482-A985-EBC6A5AE93B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiParadigm.Console", "src\MultiParadigm.Console\MultiParadigm.Console.csproj", "{F57B8A7B-206D-4493-92D1-497AF06156BD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Multiparadigm.Console", "src\Multiparadigm.Console\Multiparadigm.Console.csproj", "{F57B8A7B-206D-4493-92D1-497AF06156BD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
