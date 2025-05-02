@@ -13,7 +13,6 @@
 
 #region Pipe Operator
 
-// PipeOperatorExample();
-CustomReduceExample();
+MethodChainingExample();
 
 #endregion

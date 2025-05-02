@@ -2,8 +2,7 @@ namespace FxCs;
 
 public static class Helpers
 {
-	public static FxIterable<T> Fx<T>(IEnumerable<T> iterable)
-		=> new FxIterable<T>(iterable);
+	public static FxIterable<T> Fx<T>(IEnumerable<T> iterable) => new FxIterable<T>(iterable);
 }
 
 public class FxIterable<A>
@@ -23,6 +22,12 @@ public class FxIterable<A>
 
 	public void ForEach(Action<A> f)
 		=> IterableHelpers.ForEach(f, _iterable);
+
+	public Acc Reduce<Acc>(Func<Acc, A, Acc> f, Acc acc)
+		=> IterableHelpers.Reduce(f, acc, _iterable);
+
+	public A Reduce(Func<A, A, A> f)
+		=> IterableHelpers.Reduce(f, _iterable);
 
 	// TODO: ToEnumerable()
 }

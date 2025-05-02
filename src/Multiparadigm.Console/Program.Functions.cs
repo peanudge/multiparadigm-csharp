@@ -105,10 +105,20 @@ public partial class Program
 					Directory.EnumerateFiles(Environment.CurrentDirectory))));
 	}
 
-	public static void PipeOperatorExample()
+	public static void MethodChainingExample()
 	{
-		var mapped = Fx(["1", "2"])
-			.Map(int.Parse)
-			.Map(b => b + b);
+		var num = Fx(Naturals(5))
+			.Filter(n => n % 2 == 1)
+			.Map(n => n * 10)
+			.Reduce((a, b) => a + b);
+
+		WriteLine(num);
+
+		var num2 = Fx(Naturals(5))
+			.Filter(n => n % 2 == 1)
+			.Map(n => n * 10)
+			.Reduce((a, b) => a + b, 10);
+
+		WriteLine(num2);
 	}
 }
