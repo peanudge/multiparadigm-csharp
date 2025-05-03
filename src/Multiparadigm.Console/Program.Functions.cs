@@ -1,5 +1,7 @@
 using static IterableHelpers;
 using static FxCs.FxFactory;
+using System.ComponentModel;
+using System.Linq.Expressions;
 
 public partial class Program
 {
@@ -25,7 +27,7 @@ public partial class Program
 			WriteLine(n);
 		}
 
-		Map(x => x * 10, Enumerable.Range(1, 10)).ForEach(WriteLine);
+		Map(x => x * 10, Enumerable.Range(1, 10)).ExtForEach(WriteLine);
 	}
 
 	private record User(string Name);
@@ -120,5 +122,96 @@ public partial class Program
 			.Reduce((a, b) => a + b, 10);
 
 		WriteLine(num2);
+	}
+
+	public static void EvaluateCodeAsData()
+	{
+		// type Evaluate<A, B> = [(...args: A[]) => B, ...A[]];
+		// function evaluation<A, B>(expr: Evaluatable<A,B>) {
+		//   const [fn, ...args] = expr;
+		//   return fn(...args)
+		// }
+
+		// 뭔가 잘 안된다. 코드를 데이터로 나타내는 타입을 만들어야한다.
+		// C#에서는 데이터 타입을 강하게 정의해야한다.
+		// Generic이 적용된 데이터 타입을 정의하려면 class가 필요하다.
+
+		var add1 = (int[] values) => values.Sum();
+		int result = Evaluation(new Evaluatable<int, int>(add1, [1, 2]));
+		WriteLine(result);
+
+		var add2 = (int a, int b) => a + b;
+		var result2 = add2(1, 2);
+
+		// S - Expression
+		var a = Expression.Parameter(typeof(int), "a");
+		var b = Expression.Parameter(typeof(int), "b");
+		var body = Expression.Add(a, b);
+		var addExpression = Expression.Lambda<Func<int, int, int>>(body, a, b);
+		var result3 = addExpression.Compile().Invoke(1, 2);
+		WriteLine(result3);
+
+
+		// https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/expression-trees/
+
+	}
+
+	public static void MakeClassToList()
+	{
+		ForEach(WriteLine,
+					Map(x => x * 10,
+						Filter(x => x % 2 == 1,
+							Naturals(5))));
+
+		Fx(Naturals(5))
+			.Filter(x => x % 2 == 1)
+			.Map(x => x * 10)
+			.ForEach(WriteLine);
+
+
+		Fx([1, 2, 3, 4])
+			.Reject(n => n % 2 == 1) // Reject!
+			.Map(a => a + 10)
+			.Take(2)
+			.ExtForEach(WriteLine);
+
+		WriteLine("===========");
+
+		Fx([1, 2, 3, 4])
+			.Filter(n => n % 2 == 1)
+			.Map(a => a + 10)
+			.Take(2)
+			.ExtForEach(WriteLine);
+
+		WriteLine("===========");
+
+		Fx(Naturals(6))
+			.Filter(n => n % 2 == 1)
+			.Map(n => n * 10)
+			.To(iterable => iterable.ToList())
+			.ExtSort((a, b) => b - a)
+			.ForEach(WriteLine);
+
+		WriteLine("===========");
+
+		Fx(Naturals(6))
+			.Filter(n => n % 2 == 1)
+			.Map(n => n * 10)
+			.To(iterable => iterable.ToHashSet())
+			.Except(new HashSet<int>([10, 20, 30]))
+			.ExtForEach(WriteLine);
+
+		// .ExtForEach(WriteLine);
+
+		WriteLine("===========");
+
+		var result = Fx([5, 2, 3, 1, 4, 5, 3])
+			.Filter(n => n % 2 == 1)
+			.Map(n => n * 10)
+			.Chain(iterable => new HashSet<int>(iterable))
+			.Reduce((a, b) => a + b);
+
+		WriteLine(result);
+
 	}
 }

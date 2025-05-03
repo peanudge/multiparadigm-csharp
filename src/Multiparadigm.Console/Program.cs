@@ -13,6 +13,8 @@
 
 #region Pipe Operator
 
-MethodChainingExample();
+// MethodChainingExample();
+// EvaluateCodeAsData();
+MakeClassToList();
 
 #endregion
