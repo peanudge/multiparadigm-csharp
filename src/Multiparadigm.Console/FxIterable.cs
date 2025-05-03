@@ -1,6 +1,6 @@
 namespace FxCs;
 
-public static class Helpers
+public static class FxFactory
 {
 	public static FxIterable<T> Fx<T>(IEnumerable<T> iterable) => new FxIterable<T>(iterable);
 }
@@ -15,10 +15,10 @@ public class FxIterable<A>
 	}
 
 	public FxIterable<B> Map<B>(Func<A, B> f)
-		=> Helpers.Fx(IterableHelpers.Map(f, _iterable));
+		=> FxFactory.Fx(IterableHelpers.Map(f, _iterable));
 
 	public FxIterable<A> Filter(Func<A, bool> f)
-		=> Helpers.Fx(IterableHelpers.Filter(f, _iterable));
+		=> FxFactory.Fx(IterableHelpers.Filter(f, _iterable));
 
 	public void ForEach(Action<A> f)
 		=> IterableHelpers.ForEach(f, _iterable);
@@ -29,5 +29,5 @@ public class FxIterable<A>
 	public A Reduce(Func<A, A, A> f)
 		=> IterableHelpers.Reduce(f, _iterable);
 
-	// TODO: ToEnumerable()
+
 }

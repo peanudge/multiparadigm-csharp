@@ -1,5 +1,5 @@
 using static IterableHelpers;
-using static FxCs.Helpers;
+using static FxCs.FxFactory;
 
 public partial class Program
 {
@@ -25,7 +25,7 @@ public partial class Program
 			WriteLine(n);
 		}
 
-		Map(x => x * 10, Enumerable.Range(1, 10)).ToList().ForEach(WriteLine);
+		Map(x => x * 10, Enumerable.Range(1, 10)).ForEach(WriteLine);
 	}
 
 	private record User(string Name);
