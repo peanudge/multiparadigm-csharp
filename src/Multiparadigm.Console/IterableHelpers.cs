@@ -77,22 +77,13 @@ public static class IterableHelpers
 		return acc;
 	}
 
-
-	// type Evaluate<A, B> = [(...args: A[]) => B, ...A[]];
-	// function evaluation<A, B>(expr: Evaluatable<A,B>) {
-	//   const [fn, ...args] = expr;
-	//   return fn(...args)
-	// }
-
-	// 뭔가 잘 안된다. 코드를 데이터로 나타내는 타입을 만들어야한다.
-	// C#에서는 데이터 타입을 강하게 정의해야한다.
-	// Generic이 적용된 데이터 타입을 정의하려면 class가 필요하다.
-
-	// https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/expression-trees/
-	public record Evaluatable<A, B>(Func<A[], B> fn, A[] values); // TODO: Code as Data?
-	public static B Evaluation<A, B>(Evaluatable<A, B> evalutable)
+	public static IEnumerable<A> Take<A>(int limit, IEnumerable<A> iterable)
 	{
-		var (fn, values) = evalutable;
-		return fn([.. values]);
+		var iterator = iterable.GetEnumerator();
+		while (limit > 0 && iterator.MoveNext())
+		{
+			yield return iterator.Current;
+			limit--;
+		}
 	}
 }
