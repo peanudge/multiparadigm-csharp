@@ -2,9 +2,15 @@ using System.Collections;
 
 namespace FxCs;
 
-public static class FxFactory
+public static class Fx
 {
-	public static FxIterable<T> Fx<T>(IEnumerable<T> iterable) => new FxIterable<T>(iterable);
+	public static FxIterable<T> From<T>(IEnumerable<T> iterable) => new FxIterable<T>(iterable);
+}
+
+public static class EnumerableExtension
+{
+	public static FxIterable<TSource> ToFx<TSource>(this IEnumerable<TSource> source)
+		=> Fx.From(source);
 }
 
 public class FxIterable<A> : IEnumerable<A>
@@ -21,10 +27,10 @@ public class FxIterable<A> : IEnumerable<A>
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 	public FxIterable<B> Map<B>(Func<A, B> f)
-		=> FxFactory.Fx(IterableHelpers.Map(f, _iterable));
+		=> IterableHelpers.Map(f, _iterable).ToFx();
 
 	public FxIterable<A> Filter(Func<A, bool> f)
-		=> FxFactory.Fx(IterableHelpers.Filter(f, _iterable));
+		=> IterableHelpers.Filter(f, _iterable).ToFx();
 
 	public FxIterable<A> Reject(Func<A, bool> f)
 		=> Filter(a => !f(a));
@@ -42,5 +48,5 @@ public class FxIterable<A> : IEnumerable<A>
 		=> converter(_iterable);
 
 	public FxIterable<B> Chain<B>(Func<IEnumerable<A>, IEnumerable<B>> f)
-		=> FxFactory.Fx(f(_iterable));
+		=> f(_iterable).ToFx();
 }

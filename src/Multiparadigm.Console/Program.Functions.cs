@@ -1,7 +1,6 @@
 using static IterableHelpers;
-using static FxCs.FxFactory;
-using System.ComponentModel;
 using System.Linq.Expressions;
+using FxCs;
 
 public partial class Program
 {
@@ -27,7 +26,7 @@ public partial class Program
 			WriteLine(n);
 		}
 
-		Map(x => x * 10, Enumerable.Range(1, 10)).ExtForEach(WriteLine);
+		Map(x => x * 10, Enumerable.Range(1, 10)).ForEach(WriteLine);
 	}
 
 	private record User(string Name);
@@ -109,14 +108,16 @@ public partial class Program
 
 	public static void MethodChainingExample()
 	{
-		var num = Fx(Naturals(5))
+		var num = Naturals(5)
+			.ToFx()
 			.Filter(n => n % 2 == 1)
 			.Map(n => n * 10)
 			.Reduce((a, b) => a + b);
 
 		WriteLine(num);
 
-		var num2 = Fx(Naturals(5))
+		var num2 = Naturals(5)
+			.ToFx()
 			.Filter(n => n % 2 == 1)
 			.Map(n => n * 10)
 			.Reduce((a, b) => a + b, 10);
@@ -163,49 +164,49 @@ public partial class Program
 						Filter(x => x % 2 == 1,
 							Naturals(5))));
 
-		Fx(Naturals(5))
+		Naturals(5).ToFx()
 			.Filter(x => x % 2 == 1)
 			.Map(x => x * 10)
 			.ForEach(WriteLine);
 
 
-		Fx([1, 2, 3, 4])
+		Naturals(4).ToFx()
 			.Reject(n => n % 2 == 1) // Reject!
 			.Map(a => a + 10)
 			.Take(2)
-			.ExtForEach(WriteLine);
-
-		WriteLine("===========");
-
-		Fx([1, 2, 3, 4])
-			.Filter(n => n % 2 == 1)
-			.Map(a => a + 10)
-			.Take(2)
-			.ExtForEach(WriteLine);
-
-		WriteLine("===========");
-
-		Fx(Naturals(6))
-			.Filter(n => n % 2 == 1)
-			.Map(n => n * 10)
-			.To(iterable => iterable.ToList())
-			.ExtSort((a, b) => b - a)
 			.ForEach(WriteLine);
 
 		WriteLine("===========");
 
-		Fx(Naturals(6))
+		Naturals(4).ToFx()
+			.Filter(n => n % 2 == 1)
+			.Map(a => a + 10)
+			.Take(2)
+			.ForEach(WriteLine);
+
+		WriteLine("===========");
+
+		Naturals(6).ToFx()
+			.Filter(n => n % 2 == 1)
+			.Map(n => n * 10)
+			.To(iterable => iterable.ToList())
+			.FxSort((a, b) => b - a)
+			.ForEach(WriteLine);
+
+		WriteLine("===========");
+
+		Naturals(6).ToFx()
 			.Filter(n => n % 2 == 1)
 			.Map(n => n * 10)
 			.To(iterable => iterable.ToHashSet())
 			.Except(new HashSet<int>([10, 20, 30]))
-			.ExtForEach(WriteLine);
+			.ForEach(WriteLine);
 
 		// .ExtForEach(WriteLine);
 
 		WriteLine("===========");
 
-		var result = Fx([5, 2, 3, 1, 4, 5, 3])
+		var result = Fx.From([5, 2, 3, 1, 4, 5, 3])
 			.Filter(n => n % 2 == 1)
 			.Map(n => n * 10)
 			.Chain(iterable => new HashSet<int>(iterable))
