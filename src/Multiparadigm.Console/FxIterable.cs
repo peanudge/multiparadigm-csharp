@@ -48,4 +48,17 @@ public class FxIterable<A> : IEnumerable<A>
 
 	public FxIterable<A> Take(int limit)
 		=> IterableHelpers.Take(limit, _iterable).ToFx();
+
+	public bool Every(Func<A, bool> func)
+		=> AccumulateWith((a, b) => a && b, true, a => !a, func);
+
+	public bool Some(Func<A, bool> func)
+		=> AccumulateWith((a, b) => a || b, false, a => a, func);
+
+	private bool AccumulateWith(Func<bool, bool, bool> accumulator, bool seed, Func<bool, bool> taking, Func<A, bool> func)
+		=> _iterable.ToFx()
+			.Map(func)
+			.Filter(taking)
+			.Take(1)
+			.Reduce(accumulator, seed);
 }

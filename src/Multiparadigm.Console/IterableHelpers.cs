@@ -86,4 +86,37 @@ public static class IterableHelpers
 			limit--;
 		}
 	}
+
+	public static A? Head<A>(IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		return iterator.MoveNext() ? iterator.Current : default;
+	}
+
+	public static A? Find<A>(Func<A, bool> func, IEnumerable<A> iterable)
+		=> Head(Filter(func, iterable));
+
+	public static bool Every<A>(Func<A, bool> func, IEnumerable<A> iterable)
+		=> Reduce((a, b) => a && b, true,
+			Take(1,
+				Filter(a => !a,
+					Map(func, iterable))));
+
+	public static bool Some<A>(Func<A, bool> func, IEnumerable<A> iterable)
+		=> Reduce((a, b) => a || b, false,
+			Take(1,
+				Filter(a => a,
+					Map(func, iterable))));
+
+	public static IEnumerable<A> Concat<A>(params IEnumerable<A>[] iterables)
+	{
+		foreach (var iterable in iterables)
+		{
+			var iterator = iterable.GetEnumerator();
+			while (iterator.MoveNext())
+			{
+				yield return iterator.Current;
+			}
+		}
+	}
 }
