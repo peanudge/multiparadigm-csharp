@@ -12,6 +12,14 @@
 // Every_ListProcessing();
 // Some_ListProcessing();
 
-Concat_ListProcessing();
+// Concat_ListProcessing();
 
 
+// Chapter 04
+
+// DelayExample();
+// PromiseRaceExample();
+// IOTimeoutExample().Wait();
+
+RenderFriendsPicker().Wait();
+RenderFriendsPicker().Wait();

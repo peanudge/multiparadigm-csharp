@@ -29,7 +29,8 @@ public partial class Program
 		Map(x => x * 10, Enumerable.Range(1, 10)).ForEach(WriteLine);
 	}
 
-	private record User(string Name);
+
+	private record TestUser(string Name);
 
 	public static void TypeSystemExample()
 	{
@@ -65,7 +66,7 @@ public partial class Program
 		var a = Identity("h1");
 		var b = Identity(1);
 		var f = Identity((int n) => n % 2 == 1);
-		var e = Identity(new User("E"));
+		var e = Identity(new TestUser("E"));
 		static T Identity<T>(T arg) => arg;
 
 		var getFive = Constant(5);
