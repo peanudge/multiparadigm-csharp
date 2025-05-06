@@ -130,9 +130,11 @@ public static partial class Program
 	{
 		int[] arr = [1, 2, 3, 4, 5];
 
-		var result = Concat(arr, [6, 7, 8, 9])
-			.ToFx()
+		var result = Fx
+			.From([6, 7, 8, 9])
+			.Concat(arr)
 			.Take(3);
+
 		WriteLine(string.Join(",", result));
 
 		WriteLine("===========");
@@ -143,10 +145,9 @@ public static partial class Program
 
 		// Use Concat instead of Unshift
 		List<int> arr3 = [1, 2, 3, 4, 5];
-		WriteLine(string.Join(",", Concat([0], arr3)));
+		WriteLine(string.Join(",", Fx.From([0]).Concat(arr3)));
 
 		WriteLine("===========");
-
 	}
 }
 

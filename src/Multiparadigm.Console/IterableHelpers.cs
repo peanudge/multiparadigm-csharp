@@ -96,6 +96,19 @@ public static class IterableHelpers
 	public static A? Find<A>(Func<A, bool> func, IEnumerable<A> iterable)
 		=> Head(Filter(func, iterable));
 
+	public static IEnumerable<A> Concat<A>(params IEnumerable<A>[] iterables)
+	{
+		foreach (var iterable in iterables)
+		{
+			var iterator = iterable.GetEnumerator();
+			while (iterator.MoveNext())
+			{
+				yield return iterator.Current;
+			}
+		}
+	}
+
+
 	public static bool Every<A>(Func<A, bool> func, IEnumerable<A> iterable)
 		=> Reduce((a, b) => a && b, true,
 			Take(1,
@@ -108,15 +121,4 @@ public static class IterableHelpers
 				Filter(a => a,
 					Map(func, iterable))));
 
-	public static IEnumerable<A> Concat<A>(params IEnumerable<A>[] iterables)
-	{
-		foreach (var iterable in iterables)
-		{
-			var iterator = iterable.GetEnumerator();
-			while (iterator.MoveNext())
-			{
-				yield return iterator.Current;
-			}
-		}
-	}
 }

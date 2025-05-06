@@ -1,13 +1,96 @@
-using System.Collections;
-
 namespace FxCs;
+
+using System.Collections;
 
 public static class Fx
 {
 	public static FxIterable<T> From<T>(IEnumerable<T> iterable) => new FxIterable<T>(iterable);
-	public static FxIterable<TSource> ToFx<TSource>(this IEnumerable<TSource> source) => From(source);
-}
 
+	public static FxIterable<TSource> ToFx<TSource>(this IEnumerable<TSource> source) => From(source);
+
+	public static IEnumerable<B> Map<A, B>(Func<A, B> func, IEnumerable<A> iterable)
+	{
+		foreach (var value in iterable)
+		{
+			yield return func(value);
+		}
+	}
+
+	public static void ForEach<A>(Action<A> func, IEnumerable<A> iterable)
+	{
+		foreach (var value in iterable)
+		{
+			func(value);
+		}
+	}
+
+	public static IEnumerable<A> Filter<A>(Func<A, bool> func, IEnumerable<A> iterable)
+	{
+		foreach (var value in iterable)
+		{
+			if (func(value))
+			{
+				yield return value;
+			}
+		}
+	}
+
+	public static A Reduce<A>(Func<A, A, A> func, IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		if (!iterator.MoveNext())
+		{
+			throw new InvalidOperationException("no elements");
+		}
+
+		return BaseReduce(func, iterator.Current, iterator);
+	}
+
+	public static Acc Reduce<A, Acc>(Func<Acc, A, Acc> func, Acc acc, IEnumerable<A> iterable)
+	{
+		return BaseReduce(func, acc, iterable.GetEnumerator());
+	}
+
+	private static Acc BaseReduce<A, Acc>(Func<Acc, A, Acc> func, Acc acc, IEnumerator<A> iterator)
+	{
+		while (iterator.MoveNext())
+		{
+			acc = func.Invoke(acc, iterator.Current);
+		}
+		return acc;
+	}
+
+	public static IEnumerable<A> Take<A>(int limit, IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (limit > 0 && iterator.MoveNext())
+		{
+			yield return iterator.Current;
+			limit--;
+		}
+	}
+
+	public static A? Head<A>(IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		return iterator.MoveNext() ? iterator.Current : default;
+	}
+
+	public static A? Find<A>(Func<A, bool> func, IEnumerable<A> iterable)
+		=> Head(Filter(func, iterable));
+
+	public static IEnumerable<A> Concat<A>(params IEnumerable<A>[] iterables)
+	{
+		foreach (var iterable in iterables)
+		{
+			var iterator = iterable.GetEnumerator();
+			while (iterator.MoveNext())
+			{
+				yield return iterator.Current;
+			}
+		}
+	}
+}
 
 public class FxIterable<A> : IEnumerable<A>
 {
@@ -23,31 +106,31 @@ public class FxIterable<A> : IEnumerable<A>
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 	public FxIterable<B> Map<B>(Func<A, B> func)
-		=> IterableHelpers.Map(func, _iterable).ToFx();
+		=> Fx.Map(func, this).ToFx();
 
 	public FxIterable<A> Filter(Func<A, bool> func)
-		=> IterableHelpers.Filter(func, _iterable).ToFx();
+		=> Fx.Filter(func, this).ToFx();
 
 	public FxIterable<A> Reject(Func<A, bool> func)
 		=> Filter(a => !func(a));
 
 	public void ForEach(Action<A> func)
-		=> IterableHelpers.ForEach(func, _iterable);
+		=> Fx.ForEach(func, this);
 
 	public Acc Reduce<Acc>(Func<Acc, A, Acc> func, Acc acc)
-		=> IterableHelpers.Reduce(func, acc, _iterable);
+		=> Fx.Reduce(func, acc, this);
 
 	public A Reduce(Func<A, A, A> func)
-		=> IterableHelpers.Reduce(func, _iterable);
+		=> Fx.Reduce(func, this);
 
 	public R To<R>(Func<IEnumerable<A>, R> converter)
-		=> converter(_iterable);
+		=> converter(this);
 
 	public FxIterable<B> Chain<B>(Func<IEnumerable<A>, IEnumerable<B>> func)
-		=> func(_iterable).ToFx();
+		=> func(this).ToFx();
 
 	public FxIterable<A> Take(int limit)
-		=> IterableHelpers.Take(limit, _iterable).ToFx();
+		=> Fx.Take(limit, this).ToFx();
 
 	public bool Every(Func<A, bool> func)
 		=> AccumulateWith((a, b) => a && b, true, a => !a, func);
@@ -56,9 +139,9 @@ public class FxIterable<A> : IEnumerable<A>
 		=> AccumulateWith((a, b) => a || b, false, a => a, func);
 
 	private bool AccumulateWith(Func<bool, bool, bool> accumulator, bool seed, Func<bool, bool> taking, Func<A, bool> func)
-		=> _iterable.ToFx()
-			.Map(func)
+		=> Map(func)
 			.Filter(taking)
 			.Take(1)
 			.Reduce(accumulator, seed);
+
 }
