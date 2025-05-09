@@ -17,9 +17,10 @@
 
 // Chapter 04
 
-// DelayExample();
+// await DelayExample();
 // PromiseRaceExample();
 // IOTimeoutExample().Wait();
+// RenderFriendsPicker().Wait();
+// PromiseAllExample().Wait();
 
-RenderFriendsPicker().Wait();
-RenderFriendsPicker().Wait();
+await PromiseAllSettledExample();

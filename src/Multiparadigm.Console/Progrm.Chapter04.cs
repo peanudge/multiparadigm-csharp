@@ -1,5 +1,8 @@
-
+using System.Diagnostics;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using FxCs;
+using static TaskHelpers;
 
 public static partial class Program
 {
@@ -7,20 +10,18 @@ public static partial class Program
 		=> Task.Delay(time).ContinueWith((_) => value);
 
 	// https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/chaining-tasks-by-using-continuation-tasks#about-continuations
-	public static void DelayExample()
+	public static async Task DelayExample()
 	{
-		WriteLine("Start");
-		var task = Delay(1000, "Hello, World")
-			.ContinueWith(antecedent =>
-			{
-				WriteLine(antecedent.Result);
-				WriteLine("End");
-			});
+		var result = await Delay(1000, "Hello, World")
+			.Then(data => Delay(1000, "Hello, World"))
+			.Then(d => Task.FromException(new Exception("Heloo")))
+			.Then(data => data + "!!!");
 
-		task.Wait();
+		WriteLine(result);
+
 	}
 
-	public static void PromiseRaceExample()
+	public static async Task PromiseRaceExample()
 	{
 		/*
 		const promise1 = new Promise((resolve) => setTimeout(resolve, 500, 'one'));
@@ -28,11 +29,11 @@ public static partial class Program
 		await Promise.race([promise1, promise2]).then(value => { console.log(value) });
 		*/
 
-		Task.WhenAny([Delay(500, "one"), Delay(100, "Two")])
-			.ContinueWith((whenAnyTask) =>
-			{
-				WriteLine(whenAnyTask.Result.Result);
-			}).Wait();
+		var result = await Task
+			.WhenAny([Delay(500, "one"), Delay(100, "Two")])
+			.Then((firstTask) => firstTask.Result);
+
+		WriteLine(result);
 	}
 
 
@@ -91,5 +92,59 @@ public static partial class Program
 
 		var friends = await friendsTask;
 		WriteLine("친구 목록 렌더링: " + friends.ToFx().Map(friend => $"<li>{friend.Name}</li>").Reduce((a, b) => $"{a}{b}"));
+	}
+
+	public record File(string Name, string Body, int Size);
+
+	public static Task<File> GetFile(string name, int size = 1000)
+		=> Delay(size, new File(name, "...", size));
+
+	public static async Task PromiseAllExample()
+	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
+		try
+		{
+			var files = await Task.WhenAll([
+				Task.FromException<File>(new Exception("파일 다운로드 실패")),
+				GetFile("img.png", 500),
+				GetFile("book.pdf", 1000),
+				GetFile("index.html", 1500),
+			]);
+			files.ForEach(WriteLine);
+		}
+		catch (Exception e)
+		{
+			WriteLine(e.Message);
+		}
+		finally
+		{
+			stopWatch.Stop();
+			WriteLine("Elapsed Time: " + stopWatch.ElapsedMilliseconds);
+		}
+	}
+
+
+	public static async Task PromiseAllSettledExample()
+	{
+		var tasks = new Task<File>[] {
+			Task.FromException<File>(new Exception("파일 다운로드 실패")),
+			GetFile("img.png", 500),
+			GetFile("book.pdf", 1000),
+			GetFile("index.html", 1500),
+		};
+
+		var results = await AllSettled(tasks);
+		results.ForEach(result =>
+		{
+			if (result.Status == TaskHelpers.TaskStatus.Fulfilled)
+			{
+				WriteLine($"status: {result.Status}, value: {result.Value}");
+			}
+			else
+			{
+				WriteLine($"status: {result.Status}, value: {result.Reason}");
+			}
+		});
 	}
 }
