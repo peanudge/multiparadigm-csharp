@@ -3,6 +3,7 @@ public class TaskHelpers
 	public static Task<T> Delay<T>(int time, T value)
 		=> Task.Delay(time).ContinueWith((_) => value);
 
+
 	public enum TaskStatus
 	{
 		Pending = 0,
@@ -29,6 +30,27 @@ public class TaskHelpers
 	{
 		return await Task.WhenAll(tasks.Select(SettleTask));
 	}
+
+
+	public static Task<TResult> WhenAnySuccess<TResult>(Task<TResult>[] tasks)
+	{
+		List<Task<TResult>> remainedTasks = [.. tasks];
+		List<Task<TResult>> failedTasks = [];
+
+		while (remainedTasks.Count > 0)
+		{
+			var completedTask = Task.WhenAny(remainedTasks).Result;
+			if (completedTask.IsCompletedSuccessfully)
+			{
+				return completedTask;
+			}
+
+			failedTasks.Add(completedTask);
+			remainedTasks.Remove(completedTask);
+		}
+
+		throw new Exception("All tasks were rejected");
+	}
 }
 
 
@@ -53,4 +75,5 @@ public static class TaskExtensions
 			return resolve(preTask.Result).Result;
 		}, TaskContinuationOptions.OnlyOnRanToCompletion);
 	}
+
 }

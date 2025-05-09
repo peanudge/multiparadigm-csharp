@@ -127,24 +127,39 @@ public static partial class Program
 
 	public static async Task PromiseAllSettledExample()
 	{
-		var tasks = new Task<File>[] {
+		var results = await AllSettled([
 			Task.FromException<File>(new Exception("파일 다운로드 실패")),
 			GetFile("img.png", 500),
 			GetFile("book.pdf", 1000),
 			GetFile("index.html", 1500),
-		};
+		]);
 
-		var results = await AllSettled(tasks);
-		results.ForEach(result =>
-		{
-			if (result.Status == TaskHelpers.TaskStatus.Fulfilled)
+		results.ForEach(WriteLine);
+	}
+
+	public static Task<Result> DelayReject<Result>(int time, string error)
+	{
+		return Task.Delay(time)
+			.ContinueWith<Result>(pre =>
 			{
-				WriteLine($"status: {result.Status}, value: {result.Value}");
-			}
-			else
-			{
-				WriteLine($"status: {result.Status}, value: {result.Reason}");
-			}
-		});
+				throw new Exception(error);
+			});
+	}
+
+	public static async Task PromiseAnyExample()
+	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
+
+		var file = await WhenAnySuccess([
+			GetFile("img.png", 500),
+			GetFile("book.pdf", 1000),
+			GetFile("index.html", 1500),
+			Task.FromException<File>(new Exception("파일 다운로드 실패")),
+		]);
+
+		stopWatch.Stop();
+		WriteLine(stopWatch.Elapsed);
+		WriteLine(file);
 	}
 }

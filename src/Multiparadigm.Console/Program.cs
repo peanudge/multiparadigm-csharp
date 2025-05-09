@@ -22,5 +22,7 @@
 // IOTimeoutExample().Wait();
 // RenderFriendsPicker().Wait();
 // PromiseAllExample().Wait();
+// PromiseAllSettledExample().Wait();
 
-await PromiseAllSettledExample();
+// await PromiseAllSettledExample();
+await PromiseAnyExample();
