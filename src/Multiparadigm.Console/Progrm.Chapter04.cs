@@ -195,8 +195,8 @@ public static partial class Program
 		int limit)
 	{
 		return fs.ToFx() // [() => P<T>, () => P<T>, ...]
-			.Chunk(limit) // [[() => P<T>, () => P<T>, ...], ...] - Group
-			.Map(fs => fs.Select(f => f())) // [[P<T>, P<T>, P<T>], ...] - Run Async Func
+			.Map(f => f()) // [P<T>, P<T>, P<T>, ...] - Run Async Func
+			.Chunk(limit) // [[P<T>, P<T>, P<T>], ...] - Group
 			.Map(Task.WhenAll) // [P<T, T, T>, ...] - Wrap WhenAll for waiting 3 tasks
 			.To(FromAsync) // P<[[T,T,T],[T,T,T], ... ]> - Get result of tasks
 			.Then(tasks => tasks.SelectMany(x => x).ToArray()); // Flatten to 1 demension array
@@ -207,8 +207,9 @@ public static partial class Program
 		Func<Task<TResult>>[] fs,
 		int limit)
 	{
-		return fs.Chunk(limit)
-			.Select(fs => fs.Select(f => f()))
+		return fs
+			.Select(f => f())
+			.Chunk(limit)
 			.Select(Task.WhenAll)
 			.To(FromAsync)
 			.Then(tasks => tasks.SelectMany(x => x).ToArray());
