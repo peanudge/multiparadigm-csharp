@@ -51,6 +51,26 @@ public class TaskHelpers
 
 		throw new Exception("All tasks were rejected");
 	}
+
+	public static async Task<TResult[]> FromAsync<TResult>(IEnumerable<Task<TResult>> iterable)
+	{
+		List<TResult> results = [];
+		foreach (var task in iterable)
+		{
+			results.Add(await task);
+		}
+		return results.ToArray();
+	}
+
+	public static async Task<TResult[]> FromAsync<TResult>(IAsyncEnumerable<TResult> iterable)
+	{
+		List<TResult> results = [];
+		await foreach (var value in iterable)
+		{
+			results.Add(value);
+		}
+		return results.ToArray();
+	}
 }
 
 

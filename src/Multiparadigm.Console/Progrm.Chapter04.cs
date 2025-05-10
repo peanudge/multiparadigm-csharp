@@ -97,7 +97,10 @@ public static partial class Program
 	public record File(string Name, string Body, int Size);
 
 	public static Task<File> GetFile(string name, int size = 1000)
-		=> Delay(size, new File(name, "...", size));
+	{
+		WriteLine($"{name} 시작");
+		return Delay(size, new File(name, "...", size));
+	}
 
 	public static async Task PromiseAllExample()
 	{
@@ -161,5 +164,71 @@ public static partial class Program
 		stopWatch.Stop();
 		WriteLine(stopWatch.Elapsed);
 		WriteLine(file);
+	}
+
+	public static async Task ExecuteWithLimitExample()
+	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
+
+		var files = await ExecuteWithLimit_OnlyCSharp([
+			() => GetFile("img.png"),
+			() => GetFile("book.pdf"),
+			() => GetFile("index.html"),
+			() => GetFile("img.png"),
+			() => GetFile("book.pdf"),
+			() => GetFile("index.html"),
+			() => GetFile("img.png"),
+			() => GetFile("book.pdf"),
+			() => GetFile("index.html"),
+			() => GetFile("img.png"),
+			() => GetFile("book.pdf"),
+			() => GetFile("index.html"),
+		], 3);
+		stopWatch.Stop();
+		WriteLine(stopWatch.Elapsed);
+		files.ForEach(WriteLine);
+	}
+
+	private static Task<TResult[]> ExecuteWithLimit<TResult>(
+		Func<Task<TResult>>[] fs,
+		int limit)
+	{
+		return fs.ToFx() // [() => P<T>, () => P<T>, ...]
+			.Chunk(limit) // [[() => P<T>, () => P<T>, ...], ...] - Group
+			.Map(fs => fs.Select(f => f())) // [[P<T>, P<T>, P<T>], ...] - Run Async Func
+			.Map(Task.WhenAll) // [P<T, T, T>, ...] - Wrap WhenAll for waiting 3 tasks
+			.To(FromAsync) // P<[[T,T,T],[T,T,T], ... ]> - Get result of tasks
+			.Then(tasks => tasks.SelectMany(x => x).ToArray()); // Flatten to 1 demension array
+	}
+
+
+	private static Task<TResult[]> ExecuteWithLimit_OnlyCSharp<TResult>(
+		Func<Task<TResult>>[] fs,
+		int limit)
+	{
+		return fs.Chunk(limit)
+			.Select(fs => fs.Select(f => f()))
+			.Select(Task.WhenAll)
+			.To(FromAsync)
+			.Then(tasks => tasks.SelectMany(x => x).ToArray());
+	}
+
+	public static async Task<TResult[]> ExecuteWithLimit_GPT<TResult>(Func<Task<TResult>>[] fs, int limit)
+	{
+		if (fs == null) throw new ArgumentNullException(nameof(fs));
+		if (limit <= 0) throw new ArgumentOutOfRangeException(nameof(limit), "limit는 1 이상이어야 합니다.");
+
+		var results = new List<TResult>();
+
+		for (int i = 0; i < fs.Length; i += limit)
+		{
+			var batch = fs.Skip(i).Take(limit).ToArray();
+			var tasks = batch.Select(f => f()).ToArray();
+			var batchResults = await Task.WhenAll(tasks);
+			results.AddRange(batchResults);
+		}
+
+		return results.ToArray();
 	}
 }

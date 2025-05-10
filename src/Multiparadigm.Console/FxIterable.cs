@@ -61,8 +61,10 @@ public static class Fx
 	}
 
 	public static IEnumerable<A> Take<A>(int limit, IEnumerable<A> iterable)
+		=> Take(limit, iterable.GetEnumerator());
+
+	public static IEnumerable<A> Take<A>(int limit, IEnumerator<A> iterator)
 	{
-		var iterator = iterable.GetEnumerator();
 		while (limit > 0 && iterator.MoveNext())
 		{
 			yield return iterator.Current;
@@ -88,6 +90,17 @@ public static class Fx
 			{
 				yield return iterator.Current;
 			}
+		}
+	}
+
+	public static IEnumerable<A[]> Chunk<A>(int size, IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (true)
+		{
+			var arr = Take(size, iterator).ToArray();
+			if (arr.Length != 0) yield return arr;
+			if (arr.Length < size) break;
 		}
 	}
 }
@@ -144,4 +157,6 @@ public class FxIterable<A> : IEnumerable<A>
 			.Take(1)
 			.Reduce(accumulator, seed);
 
+	public FxIterable<A[]> Chunk(int size)
+		=> Fx.Chunk(size, this).ToFx();
 }
