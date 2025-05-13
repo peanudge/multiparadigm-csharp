@@ -27,6 +27,16 @@
 // await PromiseAllSettledExample();
 // await PromiseAnyExample();
 
-await ExecuteWithLimitExample();
+// await ExecuteWithLimitExample();
+
+// await AsyncTypesExample();
+
+// await MapSyncAndAsyncExamples();
+
+//  FilterAsyncExamplesAtCompileTime();
+// await FilterSyncAndAsyncExamples();
+
+
+await FxAsyncIterableExample();
 
 

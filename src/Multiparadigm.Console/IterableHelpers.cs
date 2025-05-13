@@ -1,5 +1,8 @@
 
 
+
+using System.Threading.Tasks;
+
 public static class IterableHelpers
 {
 
@@ -33,11 +36,28 @@ public static class IterableHelpers
 		}
 	}
 
+	public static async IAsyncEnumerable<B> Map<A, B>(Func<A, B> f, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var value in asyncIterable)
+		{
+			yield return f.Invoke(value);
+		}
+	}
+
+	public static async IAsyncEnumerable<B> Map<A, B>(Func<A, Task<B>> f, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var value in asyncIterable)
+		{
+			yield return await f.Invoke(value);
+		}
+	}
+
+
 	public static void ForEach<A>(Action<A> f, IEnumerable<A> iterable)
 	{
 		foreach (var value in iterable)
 		{
-			f(value);
+			f.Invoke(value);
 		}
 	}
 
@@ -48,6 +68,28 @@ public static class IterableHelpers
 			if (f(value))
 			{
 				yield return value;
+			}
+		}
+	}
+
+	public static async IAsyncEnumerable<A> Filter<A>(Func<A, bool> f, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var a in asyncIterable)
+		{
+			if (f(a))
+			{
+				yield return a;
+			}
+		}
+	}
+
+	public static async IAsyncEnumerable<A> Filter<A>(Func<A, Task<bool>> f, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var a in asyncIterable)
+		{
+			if (await f(a))
+			{
+				yield return a;
 			}
 		}
 	}
@@ -73,6 +115,24 @@ public static class IterableHelpers
 		while (iterator.MoveNext())
 		{
 			acc = f.Invoke(acc, iterator.Current);
+		}
+		return acc;
+	}
+
+	public static async Task<Acc> Reduce<A, Acc>(Func<Acc, A, Acc> f, Acc acc, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var a in asyncIterable)
+		{
+			acc = f(acc, a);
+		}
+		return acc;
+	}
+
+	public static async Task<Acc> Reduce<A, Acc>(Func<Acc, A, Task<Acc>> f, Acc acc, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var a in asyncIterable)
+		{
+			acc = await f(acc, a);
 		}
 		return acc;
 	}

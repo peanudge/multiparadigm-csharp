@@ -1,18 +1,37 @@
 namespace FxCs;
 
 using System.Collections;
+using System.Threading;
+using System.Threading.Tasks;
 
 public static class Fx
 {
 	public static FxIterable<T> From<T>(IEnumerable<T> iterable) => new FxIterable<T>(iterable);
-
+	public static FxAsyncIterable<T> From<T>(IAsyncEnumerable<T> iterable) => new FxAsyncIterable<T>(iterable);
 	public static FxIterable<TSource> ToFx<TSource>(this IEnumerable<TSource> source) => From(source);
+	public static FxAsyncIterable<TSource> ToFx<TSource>(this IAsyncEnumerable<TSource> source) => From(source);
 
 	public static IEnumerable<B> Map<A, B>(Func<A, B> func, IEnumerable<A> iterable)
 	{
 		foreach (var value in iterable)
 		{
 			yield return func(value);
+		}
+	}
+
+	public static async IAsyncEnumerable<B> Map<A, B>(Func<A, B> func, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var value in asyncIterable)
+		{
+			yield return func(value);
+		}
+	}
+
+	public static async IAsyncEnumerable<B> Map<A, B>(Func<A, Task<B>> func, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var value in asyncIterable)
+		{
+			yield return await func(value);
 		}
 	}
 
@@ -29,6 +48,28 @@ public static class Fx
 		foreach (var value in iterable)
 		{
 			if (func(value))
+			{
+				yield return value;
+			}
+		}
+	}
+
+	public static async IAsyncEnumerable<A> Filter<A>(Func<A, bool> func, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var value in asyncIterable)
+		{
+			if (func(value))
+			{
+				yield return value;
+			}
+		}
+	}
+
+	public static async IAsyncEnumerable<A> Filter<A>(Func<A, Task<bool>> func, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var value in asyncIterable)
+		{
+			if (await func(value))
 			{
 				yield return value;
 			}
@@ -56,6 +97,25 @@ public static class Fx
 		while (iterator.MoveNext())
 		{
 			acc = func.Invoke(acc, iterator.Current);
+		}
+		return acc;
+	}
+
+
+	public static async Task<Acc> Reduce<A, Acc>(Func<Acc, A, Acc> f, Acc acc, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var a in asyncIterable)
+		{
+			acc = f(acc, a);
+		}
+		return acc;
+	}
+
+	public static async Task<Acc> Reduce<A, Acc>(Func<Acc, A, Task<Acc>> f, Acc acc, IAsyncEnumerable<A> asyncIterable)
+	{
+		await foreach (var a in asyncIterable)
+		{
+			acc = await f(acc, a);
 		}
 		return acc;
 	}
@@ -102,6 +162,34 @@ public static class Fx
 			if (arr.Length != 0) yield return arr;
 			if (arr.Length < size) break;
 		}
+	}
+
+	public static async IAsyncEnumerable<T> ToAsync<T>(IEnumerable<T> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			yield return await Task.FromResult(iterator.Current);
+		}
+	}
+
+	public static async IAsyncEnumerable<T> ToAsync<T>(IEnumerable<Task<T>> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			yield return await iterator.Current;
+		}
+	}
+
+	public static async Task<TResult[]> FromAsync<TResult>(IAsyncEnumerable<TResult> iterable)
+	{
+		List<TResult> results = [];
+		await foreach (var value in iterable)
+		{
+			results.Add(value);
+		}
+		return results.ToArray();
 	}
 }
 
@@ -159,4 +247,48 @@ public class FxIterable<A> : IEnumerable<A>
 
 	public FxIterable<A[]> Chunk(int size)
 		=> Fx.Chunk(size, this).ToFx();
+
+	public FxAsyncIterable<A> ToAsync()
+	{
+		// TODO: await A
+		// TODO: awiat Promise<A>
+		return Fx.ToAsync(_iterable).ToFx();
+	}
+}
+
+
+public class FxAsyncIterable<A> : IAsyncEnumerable<A>
+{
+	private readonly IAsyncEnumerable<A> _iterable;
+
+	public FxAsyncIterable(IAsyncEnumerable<A> iterable)
+	{
+		_iterable = iterable;
+	}
+
+	public IAsyncEnumerator<A> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+	{
+		return _iterable.GetAsyncEnumerator();
+	}
+
+	public FxAsyncIterable<B> Map<B>(Func<A, B> f)
+		=> Fx.Map(f, this).ToFx();
+
+	public FxAsyncIterable<B> Map<B>(Func<A, Task<B>> f)
+		=> Fx.Map(f, this).ToFx();
+
+	public FxAsyncIterable<A> Filter(Func<A, bool> f)
+		=> Fx.Filter(f, this).ToFx();
+
+	public FxAsyncIterable<A> Filter(Func<A, Task<bool>> f)
+		=> Fx.Filter(f, this).ToFx();
+
+	public Task<A[]> ToArray()
+		=> Fx.FromAsync(this);
+
+	public Task<Acc> Reduce<Acc>(Func<Acc, A, Acc> func, Acc acc)
+		=> Fx.Reduce(func, acc, this);
+
+	public Task<Acc> Reduce<Acc>(Func<Acc, A, Task<Acc>> func, Acc acc)
+		=> Fx.Reduce(func, acc, this);
 }

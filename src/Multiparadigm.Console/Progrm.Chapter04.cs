@@ -1,8 +1,7 @@
 using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using FxCs;
 using static TaskHelpers;
+using static IterableHelpers;
 
 public static partial class Program
 {
@@ -231,5 +230,223 @@ public static partial class Program
 		}
 
 		return results.ToArray();
+	}
+
+	public static async Task AsyncTypesExample()
+	{
+
+		var words = await FromAsync([
+			Delay(100, "Hello"),
+			Delay(100, "World")
+		]);
+		WriteLine(string.Join(" ", words));
+
+		// https://learn.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8#c
+
+		var asyncIterable = ToAsync([1]);
+		var asyncIterator = asyncIterable.GetAsyncEnumerator();
+		await asyncIterator.MoveNextAsync();
+		WriteLine(asyncIterator.Current);
+
+		await foreach (var a in ToAsync([1, 2, 3, 4]))
+		{
+			WriteLine(a);
+		}
+
+		// var asyncIterable2 = ToAsync([Task.FromResult(2)]);
+		// var asyncIterator2 = asyncIterable2.GetAsyncEnumerator();
+		// await asyncIterator2.MoveNextAsync();
+		// WriteLine(asyncIterator2.Current);
+
+		// await foreach (var a in ToAsync([1, 2]))
+		// {
+		// 	WriteLine(a);
+		// }
+
+		// ToAsync의 필요성? IAsyncEunmerable -> IEnumerable
+		// 238page b/c IEnumerable -> IAsyncEnumerable conversion.
+		// 비동기적으로 값을 다룰 것임.
+		await foreach (var a in ToAsync([Task.FromResult(1), Task.FromResult(2)]))
+		{
+			WriteLine(a);
+		}
+
+		// await foreach (var value in MapAsync(a => a.ToUpper(), FetchStrings()))
+		// {
+		// 	WriteLine(value);
+		// }
+
+		// await foreach (var a in MapAsync(a => a * 2, Numbers()))
+		// {
+		// 	WriteLine(a);
+		// }
+
+		await foreach (var a in
+			Map(a => Delay(1000, a),
+				Filter(a => a % 2 == 1,
+					ToAsync(Naturals(10)))))
+		{
+			WriteLine(a);
+		}
+
+		await foreach (var a in FetchStrings())
+		{
+			WriteLine(a);
+		}
+	}
+
+	private static async IAsyncEnumerable<string> FetchStrings()
+	{
+		yield return await Delay(500, "A");
+		yield return await Delay(200, "B");
+	}
+
+	private static async IAsyncEnumerable<int> Numbers()
+	{
+		yield return 1;
+		yield return 2;
+	}
+
+	// 비동기를 타입으로 다룬다는 것의 의미??
+	// 컴파일 타임에 비동기 처리를 예상할 수 있다.
+	public static void MapAsyncExamplesAtCompileTime()
+	{
+		IEnumerable<string> iter1 = Map(
+			(a) => $"{a:'N'}",
+			[1, 2]);
+
+		IEnumerable<Task<string>> iter2 = Map(
+			a => Task.FromResult($"{a:N}"),
+			[1, 2]);
+
+		IAsyncEnumerable<string> iter3 = Map(
+			a => $"{a:N}",
+			ToAsync([1, 2]));
+
+		IAsyncEnumerable<string> iter4 = Map(
+			a => Task.FromResult($"{a:N}"),
+			ToAsync([1, 2]));
+
+		IAsyncEnumerable<string> iter5 = Map(
+			a => $"{a:N}",
+			ToAsync([Task.FromResult(1), Task.FromResult(2)])
+		);
+
+		IAsyncEnumerable<string> iter6 = Map(
+			a => Task.FromResult($"{a:N}"),
+			ToAsync([Task.FromResult(1), Task.FromResult(2)])
+		);
+	}
+
+	public static async Task MapSyncAndAsyncExamples()
+	{
+		// Map(a => a * 10, [1, 2]).ForEach(WriteLine);
+
+		// await foreach (var a in Map(a => Delay(100, a * 10), ToAsync([1, 2])))
+		// {
+		// 	WriteLine(a);
+		// }
+
+		// var numbers1 = await FromAsync(Map(a => Delay(100, a * 10), ToAsync([1, 2])));
+		// numbers1.ForEach(WriteLine);
+
+		var numbers2 = await Task.WhenAll(Map(a => Delay(100, a * 10), [1, 2]));
+		numbers2.ForEach(WriteLine);
+	}
+
+	public static void FilterAsyncExamplesAtCompileTime()
+	{
+		var iter1 = Filter(a => a % 2 == 1, [1, 2]);
+
+		// Compile Error:
+		// Cannot implicitly convert type 'System.Threading.Tasks.Task<bool>' to 'bool'
+		// var iter2 = Filter(a => Task.FromResult(a % 2 == 1), [1,2]);
+
+		var iter3 = Filter(a => a % 2 == 1, ToAsync([1, 2]));
+		var iter4 = Filter(a => Task.FromResult(a % 2 == 1), ToAsync([1, 2]));
+	}
+
+	public static async Task FilterSyncAndAsyncExamples()
+	{
+		var isOdd = (int a) => a % 2 == 1;
+		ForEach(WriteLine, Map(a => a * 10, Filter(isOdd, Naturals(4))));
+
+		var iter2 = Map(a => $"{a:N}", Filter(a => Delay(100, isOdd(a)), ToAsync(Naturals(4))));
+
+		await foreach (var a in iter2)
+		{
+			WriteLine(a);
+		}
+		WriteLine("End");
+
+		var numbers = await FromAsync(
+			Map(a => Delay(100, a * 10),
+				ToAsync(Filter(isOdd, Naturals(4)))));
+
+		numbers.ForEach(WriteLine);
+	}
+
+
+	private static bool IsOdd(int n)
+		=> n % 2 == 1;
+
+	public static async Task FxAsyncIterableExample()
+	{
+		var arr1 = Naturals(4).ToFx()
+			.Filter(IsOdd)
+			.Map(a => a * 10)
+			.ToArray();
+
+		WriteLine(string.Join(", ", arr1));
+
+		var iter2 = Naturals(4).ToFx()
+			.ToAsync()
+			.Filter(a => Delay(100, IsOdd(a)))
+			.Map(a => $"{a:N}");
+
+		await foreach (var a in iter2)
+		{
+			WriteLine(a);
+		}
+		WriteLine("End");
+
+		var arr3 = await Naturals(4).ToFx()
+			.Filter(IsOdd)
+			.ToAsync()
+			.Map(a => Delay(100, a * 10))
+			.ToArray();
+
+		WriteLine(string.Join(", ", arr3));
+
+		// var sum1 = await Naturals(4).ToFx()
+		//    .Filter(IsOdd)
+		//    .Map(a => Delay(100, a * 10))
+		//    .ToAsync()
+		//    .Reduce((acc, a) => acc + a, 0);
+
+		var sum2 = await Naturals(4).ToFx()
+			.Filter(IsOdd)
+			.Map(a => Delay(100, a * 10))
+			.To(iterable => Fx.ToAsync(iterable).ToFx())
+			.Reduce((acc, a) => acc + a, 0);
+
+		WriteLine(sum2);
+
+		var sum3 = await Naturals(4).ToFx()
+			.Filter(IsOdd)
+			.Map(a => Delay(100, a * 10))
+			.ToAsync()
+			.Map(task => task)
+			.Reduce((acc, a) => acc + a, 0);
+
+		WriteLine(sum3);
+
+		var sum4 = await Naturals(4).ToFx()
+			.Filter(IsOdd)
+			.Map(a => Delay(100, a * 10))
+			.To(FromAsync)
+			.Then(task => task.ToFx().Reduce((acc, a) => acc + a, 0));
+
+		WriteLine(sum4);
 	}
 }

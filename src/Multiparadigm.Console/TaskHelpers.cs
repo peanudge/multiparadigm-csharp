@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 public class TaskHelpers
 {
 	public static Task<T> Delay<T>(int time, T value)
@@ -71,11 +74,41 @@ public class TaskHelpers
 		}
 		return results.ToArray();
 	}
+
+
+	// https://github.com/dotnet/csharplang/discussions/399
+	public static async IAsyncEnumerable<T> ToAsync<T>(IEnumerable<Task<T>> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			yield return await iterator.Current;
+		}
+	}
+
+	public static async IAsyncEnumerable<T> ToAsync<T>(IEnumerable<T> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			yield return await Task.FromResult(iterator.Current);
+		}
+	}
 }
 
 
 public static class TaskExtensions
 {
+	public static async IAsyncEnumerable<T> ToAsync<T>(this IEnumerable<T> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			yield return await Task.FromResult(iterator.Current);
+		}
+	}
+
+
 	public static Task<TResult2> Then<TResult1, TResult2>(
 		this Task<TResult1> task,
 		Func<TResult1, TResult2> resolve)
@@ -95,5 +128,4 @@ public static class TaskExtensions
 			return resolve(preTask.Result).Result;
 		}, TaskContinuationOptions.OnlyOnRanToCompletion);
 	}
-
 }
