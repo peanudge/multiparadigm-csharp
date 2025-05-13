@@ -247,13 +247,16 @@ public class FxIterable<A> : IEnumerable<A>
 
 	public FxIterable<A[]> Chunk(int size)
 		=> Fx.Chunk(size, this).ToFx();
+}
 
-	public FxAsyncIterable<A> ToAsync()
-	{
-		// TODO: await A
-		// TODO: awiat Promise<A>
-		return Fx.ToAsync(_iterable).ToFx();
-	}
+public static class FxIterableExtensions
+{
+	public static FxAsyncIterable<T> ToAsync<T>(this FxIterable<T> source)
+		=> Fx.ToAsync(source).ToFx();
+
+	public static FxAsyncIterable<T> ToAsync<T>(this FxIterable<Task<T>> source)
+		=> Fx.ToAsync(source).ToFx();
+
 }
 
 

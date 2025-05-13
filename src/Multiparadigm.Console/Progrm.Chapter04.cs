@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using FxCs;
 using static TaskHelpers;
-using static IterableHelpers;
+using static FxCs.Fx;
 
 public static partial class Program
 {
@@ -243,12 +243,12 @@ public static partial class Program
 
 		// https://learn.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8#c
 
-		var asyncIterable = ToAsync([1]);
+		var asyncIterable = Fx.ToAsync([1]);
 		var asyncIterator = asyncIterable.GetAsyncEnumerator();
 		await asyncIterator.MoveNextAsync();
 		WriteLine(asyncIterator.Current);
 
-		await foreach (var a in ToAsync([1, 2, 3, 4]))
+		await foreach (var a in Fx.ToAsync([1, 2, 3, 4]))
 		{
 			WriteLine(a);
 		}
@@ -284,7 +284,7 @@ public static partial class Program
 		await foreach (var a in
 			Map(a => Delay(1000, a),
 				Filter(a => a % 2 == 1,
-					ToAsync(Naturals(10)))))
+					ToAsync(Enumerable.Range(1, 10)))))
 		{
 			WriteLine(a);
 		}
@@ -369,9 +369,9 @@ public static partial class Program
 	public static async Task FilterSyncAndAsyncExamples()
 	{
 		var isOdd = (int a) => a % 2 == 1;
-		ForEach(WriteLine, Map(a => a * 10, Filter(isOdd, Naturals(4))));
+		ForEach(WriteLine, Map(a => a * 10, Filter(isOdd, Enumerable.Range(1, 4))));
 
-		var iter2 = Map(a => $"{a:N}", Filter(a => Delay(100, isOdd(a)), ToAsync(Naturals(4))));
+		var iter2 = Map(a => $"{a:N}", Filter(a => Delay(100, isOdd(a)), ToAsync(Enumerable.Range(1, 4))));
 
 		await foreach (var a in iter2)
 		{
@@ -379,9 +379,9 @@ public static partial class Program
 		}
 		WriteLine("End");
 
-		var numbers = await FromAsync(
+		var numbers = await Fx.FromAsync(
 			Map(a => Delay(100, a * 10),
-				ToAsync(Filter(isOdd, Naturals(4)))));
+				ToAsync(Filter(isOdd, Enumerable.Range(1, 4)))));
 
 		numbers.ForEach(WriteLine);
 	}
@@ -392,14 +392,14 @@ public static partial class Program
 
 	public static async Task FxAsyncIterableExample()
 	{
-		var arr1 = Naturals(4).ToFx()
+		var arr1 = Enumerable.Range(1, 4).ToFx()
 			.Filter(IsOdd)
 			.Map(a => a * 10)
 			.ToArray();
 
 		WriteLine(string.Join(", ", arr1));
 
-		var iter2 = Naturals(4).ToFx()
+		var iter2 = Enumerable.Range(1, 4).ToFx()
 			.ToAsync()
 			.Filter(a => Delay(100, IsOdd(a)))
 			.Map(a => $"{a:N}");
@@ -410,7 +410,7 @@ public static partial class Program
 		}
 		WriteLine("End");
 
-		var arr3 = await Naturals(4).ToFx()
+		var arr3 = await Enumerable.Range(1, 4).ToFx()
 			.Filter(IsOdd)
 			.ToAsync()
 			.Map(a => Delay(100, a * 10))
@@ -418,13 +418,13 @@ public static partial class Program
 
 		WriteLine(string.Join(", ", arr3));
 
-		// var sum1 = await Naturals(4).ToFx()
+		// var sum1 = await Enumerable.Range(1, 4).ToFx()
 		//    .Filter(IsOdd)
 		//    .Map(a => Delay(100, a * 10))
 		//    .ToAsync()
 		//    .Reduce((acc, a) => acc + a, 0);
 
-		var sum2 = await Naturals(4).ToFx()
+		var sum2 = await Enumerable.Range(1, 4).ToFx()
 			.Filter(IsOdd)
 			.Map(a => Delay(100, a * 10))
 			.To(iterable => Fx.ToAsync(iterable).ToFx())
@@ -432,7 +432,7 @@ public static partial class Program
 
 		WriteLine(sum2);
 
-		var sum3 = await Naturals(4).ToFx()
+		var sum3 = await Enumerable.Range(1, 4).ToFx()
 			.Filter(IsOdd)
 			.Map(a => Delay(100, a * 10))
 			.ToAsync()
@@ -441,7 +441,7 @@ public static partial class Program
 
 		WriteLine(sum3);
 
-		var sum4 = await Naturals(4).ToFx()
+		var sum4 = await Enumerable.Range(1, 4).ToFx()
 			.Filter(IsOdd)
 			.Map(a => Delay(100, a * 10))
 			.To(FromAsync)
