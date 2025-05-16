@@ -301,11 +301,11 @@ public static partial class Program
 		yield return await Delay(200, "B");
 	}
 
-	private static async IAsyncEnumerable<int> Numbers()
-	{
-		yield return 1;
-		yield return 2;
-	}
+	// private static async IAsyncEnumerable<int> Numbers()
+	// {
+	// 	yield return 1;
+	// 	yield return 2;
+	// }
 
 	// 비동기를 타입으로 다룬다는 것의 의미??
 	// 컴파일 타임에 비동기 처리를 예상할 수 있다.
@@ -436,7 +436,6 @@ public static partial class Program
 			.Filter(IsOdd)
 			.Map(a => Delay(100, a * 10))
 			.ToAsync()
-			.Map(task => task)
 			.Reduce((acc, a) => acc + a, 0);
 
 		WriteLine(sum3);
@@ -449,4 +448,7 @@ public static partial class Program
 
 		WriteLine(sum4);
 	}
+
+
+
 }

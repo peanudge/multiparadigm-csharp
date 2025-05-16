@@ -1,42 +1,9 @@
-﻿// MethodChainingExample();
-// EvaluateCodeAsData();
-// MakeClassToList();
-// ListProcessingExamplePratice();
+﻿// 5.1.1
+// Two_Demension();
 
-// CurryingExample();
-// OrderOfExecIterator();
+// 5.1.2
+// HandleBasketBallData();
 
-// Find_ListProcessing();
-
-
-// Every_ListProcessing();
-// Some_ListProcessing();
-
-// Concat_ListProcessing();
-
-
-// Chapter 04
-
-// await DelayExample();
-// PromiseRaceExample();
-// IOTimeoutExample().Wait();
-// RenderFriendsPicker().Wait();
-// PromiseAllExample().Wait();
-// PromiseAllSettledExample().Wait();
-
-// await PromiseAllSettledExample();
-// await PromiseAnyExample();
-
-// await ExecuteWithLimitExample();
-
-// await AsyncTypesExample();
-
-// await MapSyncAndAsyncExamples();
-
-//  FilterAsyncExamplesAtCompileTime();
-// await FilterSyncAndAsyncExamples();
-
-
-await FxAsyncIterableExample();
-
-
+// 5.1.3
+// HandleCommerceData1();
+HandleCommerceData2();

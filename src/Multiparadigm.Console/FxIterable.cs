@@ -164,6 +164,18 @@ public static class Fx
 		}
 	}
 
+	public static IEnumerable<B> FlatMap<A, B>(Func<A, IEnumerable<B>> f, IEnumerable<A> iterable)
+	{
+		foreach (var item in iterable)
+		{
+			var subIterable = f(item);
+			foreach (var value in subIterable)
+			{
+				yield return value;
+			}
+		}
+	}
+
 	public static async IAsyncEnumerable<T> ToAsync<T>(IEnumerable<T> iterable)
 	{
 		var iterator = iterable.GetEnumerator();
@@ -247,6 +259,9 @@ public class FxIterable<A> : IEnumerable<A>
 
 	public FxIterable<A[]> Chunk(int size)
 		=> Fx.Chunk(size, this).ToFx();
+
+	public FxIterable<B> FlatMap<B>(Func<A, IEnumerable<B>> f)
+		=> Fx.FlatMap(f, _iterable).ToFx();
 }
 
 public static class FxIterableExtensions

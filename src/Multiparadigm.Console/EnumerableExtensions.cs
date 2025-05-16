@@ -18,4 +18,16 @@ public static class EnumerableExtensions
 		source.Sort(comparison);
 		return source;
 	}
+
+
+	public static IEnumerable<T> Flat<T>(this IEnumerable<IEnumerable<T>> source)
+	{
+		foreach (var a in source)
+		{
+			foreach (var b in a)
+			{
+				yield return b;
+			}
+		}
+	}
 }
