@@ -36,6 +36,11 @@ public static class IterableHelpers
 		}
 	}
 
+	public static Func<IEnumerable<A>, IEnumerable<B>> Map<A, B>(Func<A, B> f)
+	{
+		return (IEnumerable<A> iterable) => Map(f, iterable);
+	}
+
 	public static async IAsyncEnumerable<B> Map<A, B>(Func<A, B> f, IAsyncEnumerable<A> asyncIterable)
 	{
 		await foreach (var value in asyncIterable)
@@ -70,6 +75,11 @@ public static class IterableHelpers
 				yield return value;
 			}
 		}
+	}
+
+	public static Func<IEnumerable<A>, IEnumerable<A>> Filter<A>(Func<A, bool> f)
+	{
+		return (IEnumerable<A> iterable) => Filter(f, iterable);
 	}
 
 	public static async IAsyncEnumerable<A> Filter<A>(Func<A, bool> f, IAsyncEnumerable<A> asyncIterable)
@@ -180,5 +190,6 @@ public static class IterableHelpers
 			Take(1,
 				Filter(a => a,
 					Map(func, iterable))));
+
 
 }

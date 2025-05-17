@@ -262,6 +262,7 @@ public class FxIterable<A> : IEnumerable<A>
 
 	public FxIterable<B> FlatMap<B>(Func<A, IEnumerable<B>> f)
 		=> Fx.FlatMap(f, _iterable).ToFx();
+
 }
 
 public static class FxIterableExtensions

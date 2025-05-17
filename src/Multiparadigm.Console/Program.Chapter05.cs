@@ -1,4 +1,8 @@
+using System.ComponentModel;
+using System.Threading.Tasks;
 using FxCs;
+
+using static IterableHelpers;
 
 public static partial class Program
 {
@@ -132,9 +136,15 @@ public static partial class Program
 				]
 			)
 		];
-		WriteLine(CalcTotalPrice(products));
-		WriteLine(SumSelectedQuantities2(products));
-		WriteLine(CalcSelectedPrice2(products));
+		// WriteLine(CalcTotalPrice(products));
+		// WriteLine(SumSelectedQuantities2(products));
+		// WriteLine(CalcSelectedPrice2(products));
+
+		products.Pipe(
+			products => products.Where(prd => prd.Selected),
+			products => CalcTotalPrice(products.ToArray())
+		);
+
 	}
 
 	private static int SumSelectedQuantities2(Product[] products)
@@ -160,4 +170,59 @@ public static partial class Program
 
 	private static int CalcSelectedPrice2(Product[] products)
 		=> CalcTotalPrice(products.Where(prd => prd.Selected).ToArray());
+
+
+
+	// 5.2.1 Pipe Function
+	// h(x) => f(g(x))
+	// 1. Method Chain (OOP)
+	// 2. Pipe Method (FP)
+	public static async Task FunctionCompositionUsingPipe()
+	{
+		// var add = (int a) => (int b) => a + b;
+		// WriteLine(add(5)(10));
+		// // FX/TS use reduce + typescript
+		// // 안전한 합성
+
+		// var result1 = PipeExtensions.Pipe(
+		// 	10,
+		// 	add(10),
+		// 	add(10)
+		// );
+		// WriteLine(result1);
+
+		// var result = PipeExtensions.Pipe(
+		// 	new string[] { "1", "2", "3" },
+		// 	texts => Map(n => int.Parse(n), texts),
+		// 	nums => Filter(n => n == 1, nums)
+		// );
+
+		// result.ForEach(WriteLine);
+
+		// var result = await PipeExtensions.Pipe(
+		// 	Task.FromResult(5),
+		// 	async task => await task + 10,
+		// 	async task =>
+		// 	{
+		// 		await Task.Delay(1000);
+		// 		return await task;
+		// 	},
+		// 	async task => await task - 5
+		// );
+
+		var arr = new int[] { 1, 2, 3, 4, 5 };
+		await PipeExtensions.Pipe(
+			arr,
+			Fx.ToAsync,
+			arr => Map(a => a + 10, arr),
+			arr => Filter(a => a % 2 == 0, arr),
+			arr => Fx.FromAsync(arr)
+		).ContinueWith(
+			task => task.Result.ForEach(WriteLine)
+		);
+	}
+
+
+
+
 }

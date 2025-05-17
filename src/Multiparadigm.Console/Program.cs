@@ -6,4 +6,9 @@
 
 // 5.1.3
 // HandleCommerceData1();
-HandleCommerceData2();
+// HandleCommerceData2();
+
+
+// 5.2.1
+await FunctionCompositionUsingPipe();
+
