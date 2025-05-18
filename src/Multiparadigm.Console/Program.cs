@@ -10,5 +10,6 @@
 
 
 // 5.2.1
-await FunctionCompositionUsingPipe();
+// await FunctionCompositionUsingPipe();
+ZipFunction();
 

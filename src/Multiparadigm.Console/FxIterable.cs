@@ -164,6 +164,16 @@ public static class Fx
 		}
 	}
 
+	public static IEnumerable<(A, B)> Zip<A, B>(IEnumerable<A> firstIterable, IEnumerable<B> secondIterable)
+	{
+		var firstIterator = firstIterable.GetEnumerator();
+		var secondIterator = secondIterable.GetEnumerator();
+		while (firstIterator.MoveNext() && secondIterator.MoveNext())
+		{
+			yield return (firstIterator.Current, secondIterator.Current);
+		}
+	}
+
 	public static IEnumerable<B> FlatMap<A, B>(Func<A, IEnumerable<B>> f, IEnumerable<A> iterable)
 	{
 		foreach (var item in iterable)

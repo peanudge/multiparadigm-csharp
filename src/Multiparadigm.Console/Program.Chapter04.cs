@@ -399,7 +399,8 @@ public static partial class Program
 
 		WriteLine(string.Join(", ", arr1));
 
-		var iter2 = Enumerable.Range(1, 4).ToFx()
+		var iter2 = Enumerable.Range(1, 4)
+			.ToFx()
 			.ToAsync()
 			.Filter(a => Delay(100, IsOdd(a)))
 			.Map(a => $"{a:N}");

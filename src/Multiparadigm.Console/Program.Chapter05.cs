@@ -179,36 +179,34 @@ public static partial class Program
 	// 2. Pipe Method (FP)
 	public static async Task FunctionCompositionUsingPipe()
 	{
-		// var add = (int a) => (int b) => a + b;
-		// WriteLine(add(5)(10));
-		// // FX/TS use reduce + typescript
-		// // 안전한 합성
+		var add = (int a) => (int b) => a + b;
+		WriteLine(add(5)(10));
 
-		// var result1 = PipeExtensions.Pipe(
-		// 	10,
-		// 	add(10),
-		// 	add(10)
-		// );
-		// WriteLine(result1);
+		var result1 = 10.Pipe(
+			add(10),
+			add(10)
+		);
 
-		// var result = PipeExtensions.Pipe(
-		// 	new string[] { "1", "2", "3" },
-		// 	texts => Map(n => int.Parse(n), texts),
-		// 	nums => Filter(n => n == 1, nums)
-		// );
+		WriteLine(result1);
 
-		// result.ForEach(WriteLine);
+		var result2 = PipeExtensions.Pipe(
+			new string[] { "1", "2", "3" },
+			texts => Map(n => int.Parse(n), texts),
+			nums => Filter(n => n == 1, nums)
+		);
 
-		// var result = await PipeExtensions.Pipe(
-		// 	Task.FromResult(5),
-		// 	async task => await task + 10,
-		// 	async task =>
-		// 	{
-		// 		await Task.Delay(1000);
-		// 		return await task;
-		// 	},
-		// 	async task => await task - 5
-		// );
+		result2.ForEach(WriteLine);
+
+		var result = await PipeExtensions.Pipe(
+			Task.FromResult(5),
+			async task => await task + 10,
+			async task =>
+			{
+				await Task.Delay(1000);
+				return await task;
+			},
+			async task => await task - 5
+		);
 
 		var arr = new int[] { 1, 2, 3, 4, 5 };
 		await PipeExtensions.Pipe(
@@ -223,6 +221,13 @@ public static partial class Program
 	}
 
 
-
-
+	public static void ZipFunction()
+	{
+		Fx.From(["Jiho", "Suhyuen", "Jinjoo"])
+			.Pipe(
+				names => Fx.Zip(names, Naturals()),
+				names => Map(tuple => $"{tuple.Item1}: {tuple.Item2}", names)
+			)
+			.ForEach(WriteLine);
+	}
 }
