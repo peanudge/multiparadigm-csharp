@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using FxCs;
 
@@ -229,5 +230,35 @@ public static partial class Program
 				names => Map(tuple => $"{tuple.Item1}: {tuple.Item2}", names)
 			)
 			.ForEach(WriteLine);
+	}
+
+	//5.2.5 콜라츠 추측
+
+	public static IEnumerable<int> Count() => Naturals();
+	public static IEnumerable<A> RepeatApply<A>(Func<A, A> func, A acc)
+	{
+		while (true) yield return acc = func(acc);
+	}
+
+	public static int NextCollatzValue(int num) => num % 2 == 0 ? num / 2 : num * 3 + 1;
+
+	public static int CollatzConjecture(int num)
+	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
+
+		var collatzCount = PipeExtensions.Pipe(
+			RepeatApply(NextCollatzValue, num),
+			_ => Enumerable.Zip(Count(), _),
+			_ => Enumerable.Where(_, tuple => tuple.Second == 1),
+			_ => Enumerable.FirstOrDefault(_),
+			collatz => collatz!,
+			collatz => collatz.First
+		);
+
+		stopWatch.Stop();
+		WriteLine($"Collatze {num} => {collatzCount} ({stopWatch.ElapsedMilliseconds} ms)");
+
+		return collatzCount;
 	}
 }
