@@ -123,9 +123,23 @@ public static class Fx
 	public static IEnumerable<A> Take<A>(int limit, IEnumerable<A> iterable)
 		=> Take(limit, iterable.GetEnumerator());
 
+
 	public static IEnumerable<A> Take<A>(int limit, IEnumerator<A> iterator)
 	{
 		while (limit > 0 && iterator.MoveNext())
+		{
+			yield return iterator.Current;
+			limit--;
+		}
+	}
+
+	public static IAsyncEnumerable<A> Take<A>(int limit, IAsyncEnumerable<A> iterable)
+	{
+		return Take(limit, iterable.GetAsyncEnumerator());
+	}
+	public static async IAsyncEnumerable<A> Take<A>(int limit, IAsyncEnumerator<A> iterator)
+	{
+		while (limit > 0 && await iterator.MoveNextAsync())
 		{
 			yield return iterator.Current;
 			limit--;
@@ -142,11 +156,32 @@ public static class Fx
 			yield return value;
 		}
 	}
+	public static async IAsyncEnumerable<A> TakeWhile<A>(Func<A, bool> func, IAsyncEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetAsyncEnumerator();
+		while (await iterator.MoveNextAsync())
+		{
+			var value = iterator.Current;
+			if (!func(value)) break;
+			yield return value;
+		}
+	}
 
 	public static IEnumerable<A> TakeUntilInclusive<A>(Func<A, bool> func, IEnumerable<A> iterable)
 	{
 		var iterator = iterable.GetEnumerator();
 		while (iterator.MoveNext())
+		{
+			var value = iterator.Current;
+			yield return value;
+			if (func(value)) break;
+		}
+	}
+
+	public static async IAsyncEnumerable<A> TakeUntilInclusive<A>(Func<A, bool> func, IAsyncEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetAsyncEnumerator();
+		while (await iterator.MoveNextAsync())
 		{
 			var value = iterator.Current;
 			yield return value;
@@ -199,6 +234,18 @@ public static class Fx
 	public static IEnumerable<B> FlatMap<A, B>(Func<A, IEnumerable<B>> f, IEnumerable<A> iterable)
 	{
 		foreach (var item in iterable)
+		{
+			var subIterable = f(item);
+			foreach (var value in subIterable)
+			{
+				yield return value;
+			}
+		}
+	}
+
+	public static async IAsyncEnumerable<B> FlatMap<A, B>(Func<A, IEnumerable<B>> f, IAsyncEnumerable<A> iterable)
+	{
+		await foreach (var item in iterable)
 		{
 			var subIterable = f(item);
 			foreach (var value in subIterable)
@@ -311,6 +358,8 @@ public static class FxIterableExtensions
 	public static FxAsyncIterable<T> ToAsync<T>(this FxIterable<Task<T>> source)
 		=> Fx.ToAsync(source).ToFx();
 
+	public static FxAsyncIterable<T> Flat<T>(this FxAsyncIterable<T[]> source)
+		=> source.FlatMap(items => items).ToFx();
 }
 
 
@@ -348,4 +397,16 @@ public class FxAsyncIterable<A> : IAsyncEnumerable<A>
 
 	public Task<Acc> Reduce<Acc>(Func<Acc, A, Task<Acc>> func, Acc acc)
 		=> Fx.Reduce(func, acc, this);
+
+	public FxAsyncIterable<A> Take(int limit)
+		=> Fx.Take(limit, _iterable).ToFx();
+
+	public FxAsyncIterable<A> TakeWhile(Func<A, bool> func)
+		=> Fx.TakeWhile(func, _iterable).ToFx();
+
+	public FxAsyncIterable<A> TakeUntilInclusive(Func<A, bool> func)
+	=> Fx.TakeUntilInclusive(func, _iterable).ToFx();
+
+	public FxAsyncIterable<B> FlatMap<B>(Func<A, IEnumerable<B>> f)
+		=> Fx.FlatMap(f, _iterable).ToFx();
 }
