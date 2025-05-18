@@ -1,3 +1,6 @@
+using System.Collections;
+using System.Threading.Tasks;
+
 public static class EnumerableExtensions
 {
 	// public R To<R>(Func<IEnumerable<A>, R> converter)
@@ -29,5 +32,53 @@ public static class EnumerableExtensions
 				yield return b;
 			}
 		}
+	}
+
+	public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> source)
+	{
+		foreach (var value in source) yield return await Task.FromResult(value);
+	}
+
+
+	public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<Task<T>> source)
+	{
+		foreach (var task in source) yield return await task;
+	}
+}
+
+public static class AsyncEnumerableExtensions
+{
+	public static async IAsyncEnumerable<R> Select<T, R>(this IAsyncEnumerable<T> source, Func<T, R> func)
+	{
+		await foreach (var value in source)
+		{
+			yield return func(value);
+		}
+	}
+
+	public static async IAsyncEnumerable<R> Select<T, R>(this IAsyncEnumerable<T> source, Func<T, Task<R>> func)
+	{
+		await foreach (var value in source)
+		{
+			yield return await func(value);
+		}
+	}
+
+	public static async Task ForEach<T>(this IAsyncEnumerable<T> source, Action<T> action)
+	{
+		await foreach (var value in source)
+		{
+			action(value);
+		}
+	}
+
+	public static async Task<T[]> ToArray<T>(this IAsyncEnumerable<T> source)
+	{
+		List<T> array = new();
+		await foreach (var value in source)
+		{
+			array.Add(value);
+		}
+		return array.ToArray();
 	}
 }

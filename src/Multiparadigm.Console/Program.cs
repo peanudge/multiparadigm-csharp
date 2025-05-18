@@ -18,5 +18,12 @@
 // WriteLine(CollatzConjecture(4));
 // WriteLine(CollatzConjecture(5));
 
-InsteadBreakExample();
+// InsteadBreakExample();
 
+
+
+await Enumerable.Range(1, 10)
+	.Select(n => Delay(1000, n))
+	.ToAsyncEnumerable()
+	.Select(n => n * 2)
+	.ForEach(WriteLine);
