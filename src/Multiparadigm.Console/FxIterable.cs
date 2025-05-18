@@ -132,6 +132,28 @@ public static class Fx
 		}
 	}
 
+	public static IEnumerable<A> TakeWhile<A>(Func<A, bool> func, IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			var value = iterator.Current;
+			if (!func(value)) break;
+			yield return value;
+		}
+	}
+
+	public static IEnumerable<A> TakeUntilInclusive<A>(Func<A, bool> func, IEnumerable<A> iterable)
+	{
+		var iterator = iterable.GetEnumerator();
+		while (iterator.MoveNext())
+		{
+			var value = iterator.Current;
+			yield return value;
+			if (func(value)) break;
+		}
+	}
+
 	public static A? Head<A>(IEnumerable<A> iterable)
 	{
 		var iterator = iterable.GetEnumerator();
@@ -254,6 +276,12 @@ public class FxIterable<A> : IEnumerable<A>
 
 	public FxIterable<A> Take(int limit)
 		=> Fx.Take(limit, this).ToFx();
+
+	public FxIterable<A> TakeWhile(Func<A, bool> func)
+		=> Fx.TakeWhile(func, _iterable).ToFx();
+
+	public FxIterable<A> TaskUntilInclusive(Func<A, bool> func)
+		=> Fx.TakeUntilInclusive(func, _iterable).ToFx();
 
 	public bool Every(Func<A, bool> func)
 		=> AccumulateWith((a, b) => a && b, true, a => !a, func);

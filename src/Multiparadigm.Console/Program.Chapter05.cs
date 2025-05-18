@@ -261,4 +261,23 @@ public static partial class Program
 
 		return collatzCount;
 	}
+
+	public static void InsteadBreakExample()
+	{
+		Fx.From([1, 2, 3, 0, 0, 5, 6])
+			.TakeWhile(a =>
+			{
+				WriteLine($"TakeWhile: {a}, {a >= 1}");
+				return a >= 1;
+			})
+			.ForEach(WriteLine);
+
+		Fx.From([0, 10, 1, 3, 5, 0, 4, 2])
+			.TaskUntilInclusive(a =>
+			{
+				WriteLine($"TakeUntilInclusive: {a}, {a == 5}");
+				return a == 5;
+			})
+			.ForEach(WriteLine);
+	}
 }

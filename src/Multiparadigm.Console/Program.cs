@@ -14,9 +14,9 @@
 // ZipFunction();
 
 // 5.2.5 Collatz Conjecture
+// WriteLine(CollatzConjecture(1));
+// WriteLine(CollatzConjecture(4));
+// WriteLine(CollatzConjecture(5));
 
-
-WriteLine(CollatzConjecture(1));
-WriteLine(CollatzConjecture(4));
-WriteLine(CollatzConjecture(5));
+InsteadBreakExample();
 

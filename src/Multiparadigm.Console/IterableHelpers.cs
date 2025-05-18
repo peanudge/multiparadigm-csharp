@@ -157,6 +157,7 @@ public static class IterableHelpers
 		}
 	}
 
+
 	public static A? Head<A>(IEnumerable<A> iterable)
 	{
 		var iterator = iterable.GetEnumerator();
