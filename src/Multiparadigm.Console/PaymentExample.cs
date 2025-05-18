@@ -59,7 +59,7 @@ public static class PaymentExample
 		/// </summary>
 		/// <param name="ids"></param>
 		/// <returns></returns>
-		public async Task<Order[]> GetOrders(int[] ids)
+		public async Task<Order[]> GetOrders(long[] ids)
 		{
 			WriteLine($"SELECT * FROM orders WHERE IN ({ids}) AND is_paid = true;");
 			await Task.Delay(100);
@@ -75,7 +75,6 @@ public static class PaymentExample
 
 	public static async Task<Payment[]> SyncPayments()
 	{
-		// TODO: 1. Get payments from PG
 		var pgApi = new PgApi();
 		var payments = await Enumerable.Range(1, int.MaxValue)
 			.ToAsyncEnumerable()
@@ -84,15 +83,23 @@ public static class PaymentExample
 			.Flat()
 			.ToArray();
 
+		var storeDb = new StoreDB();
+		var orders = await storeDb.GetOrders(
+			payments.Select(p => p.StoreOrderId).ToArray()
+		);
+
+		var ordersById = orders.Select(order => order.Id).ToHashSet();
+
+		await payments
+		   .ToAsyncEnumerable()
+		   .Reject(p => ordersById.Contains(p.StoreOrderId))
+		   .ForEach(async p =>
+		   {
+			   var cancelResult = await pgApi.CancelPayment(p.PgUid);
+			   WriteLine(cancelResult.Message);
+		   });
+
 		return payments;
-
-		// payments.ForEach(WriteLine);
-		// merge one from all pages
-
-		// TODO: 2. Get orders matched with Payments of PG
-
-		// TOOD: 3. Cancel and return missing payments
-
 	}
 }
 

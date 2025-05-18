@@ -64,6 +64,17 @@ public static class AsyncEnumerableExtensions
 		}
 	}
 
+	public static async IAsyncEnumerable<T> Reject<T>(this IAsyncEnumerable<T> source, Func<T, bool> func)
+	{
+		await foreach (var item in source)
+		{
+			if (!func(item))
+			{
+				yield return item;
+			}
+		}
+	}
+
 	public static async IAsyncEnumerable<T> Take<T>(this IAsyncEnumerable<T> source, int limit)
 	{
 		var iterator = source.GetAsyncEnumerator();

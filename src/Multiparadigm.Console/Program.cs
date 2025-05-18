@@ -20,6 +20,4 @@
 
 
 // 5.3
-var payments = await PaymentExample.SyncPayments();
-payments.ForEach(WriteLine);
-
+await PaymentExample.SyncPayments();
