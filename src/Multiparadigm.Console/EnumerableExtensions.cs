@@ -64,6 +64,59 @@ public static class AsyncEnumerableExtensions
 		}
 	}
 
+	public static async IAsyncEnumerable<T> Take<T>(this IAsyncEnumerable<T> source, int limit)
+	{
+		var iterator = source.GetAsyncEnumerator();
+		while (limit > 0 && await iterator.MoveNextAsync())
+		{
+			yield return iterator.Current;
+			limit--;
+		}
+	}
+
+	public static async IAsyncEnumerable<T> TakeWhile<T>(this IAsyncEnumerable<T> source, Func<T, bool> func)
+	{
+		var iterator = source.GetAsyncEnumerator();
+		while (await iterator.MoveNextAsync())
+		{
+			if (!func(iterator.Current)) break;
+			yield return iterator.Current;
+		}
+	}
+
+	public static async IAsyncEnumerable<T> TakeUntilInclusive<T>(this IAsyncEnumerable<T> source, Func<T, bool> func)
+	{
+		var iterator = source.GetAsyncEnumerator();
+		while (await iterator.MoveNextAsync())
+		{
+			yield return iterator.Current;
+			if (func(iterator.Current)) break;
+		}
+	}
+
+	public static async IAsyncEnumerable<R> SelectMany<T, R>(this IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> func)
+	{
+		await foreach (var a in source)
+		{
+			var sub = func(a);
+			foreach (var item in sub)
+			{
+				yield return item;
+			}
+		}
+	}
+
+	public static async IAsyncEnumerable<T> Flat<T>(this IAsyncEnumerable<T[]> source)
+	{
+		await foreach (var items in source)
+		{
+			foreach (var item in items)
+			{
+				yield return item;
+			}
+		}
+	}
+
 	public static async Task ForEach<T>(this IAsyncEnumerable<T> source, Action<T> action)
 	{
 		await foreach (var value in source)

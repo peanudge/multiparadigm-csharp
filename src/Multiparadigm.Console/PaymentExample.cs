@@ -78,9 +78,8 @@ public static class PaymentExample
 		// TODO: 1. Get payments from PG
 		var pgApi = new PgApi();
 		var payments = await Enumerable.Range(1, int.MaxValue)
-			.ToFx()
-			.ToAsync()
-			.Map(pgApi.GetPayments)
+			.ToAsyncEnumerable()
+			.Select(pgApi.GetPayments)
 			.TakeUntilInclusive(payments => payments.Length < 3)
 			.Flat()
 			.ToArray();
