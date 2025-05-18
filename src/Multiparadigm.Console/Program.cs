@@ -20,4 +20,6 @@
 
 
 // 5.3
-await PaymentExample.SyncPayments();
+// await PaymentExample.SyncPayments();
+
+await PaymentExample.RunScheduler();

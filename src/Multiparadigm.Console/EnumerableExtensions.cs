@@ -3,12 +3,11 @@ using System.Threading.Tasks;
 
 public static class EnumerableExtensions
 {
-	// public R To<R>(Func<IEnumerable<A>, R> converter)
-	// => converter(this);
+
 	public static R To<TSource, R>(
-		this IEnumerable<TSource> source,
-		Func<IEnumerable<TSource>, R> converter)
-		=> converter(source);
+	   this IEnumerable<TSource> source,
+	   Func<IEnumerable<TSource>, R> converter)
+	   => converter(source);
 
 	public static void ForEach<TSource>(this IEnumerable<TSource> source, Action<TSource> f)
 	{
@@ -107,12 +106,12 @@ public static class AsyncEnumerableExtensions
 
 	public static async IAsyncEnumerable<R> SelectMany<T, R>(this IAsyncEnumerable<T> source, Func<T, IEnumerable<R>> func)
 	{
-		await foreach (var a in source)
+		await foreach (var elements in source)
 		{
-			var sub = func(a);
-			foreach (var item in sub)
+			var subElements = func(elements);
+			foreach (var element in subElements)
 			{
-				yield return item;
+				yield return element;
 			}
 		}
 	}
@@ -136,6 +135,14 @@ public static class AsyncEnumerableExtensions
 		}
 	}
 
+	public static async Task ForEach<T>(this IAsyncEnumerable<T> source, Func<T, Task> action)
+	{
+		await foreach (var value in source)
+		{
+			await action(value);
+		}
+	}
+
 	public static async Task<T[]> ToArray<T>(this IAsyncEnumerable<T> source)
 	{
 		List<T> array = new();
@@ -145,4 +152,6 @@ public static class AsyncEnumerableExtensions
 		}
 		return array.ToArray();
 	}
+
+
 }

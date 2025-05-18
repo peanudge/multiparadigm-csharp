@@ -49,6 +49,13 @@ public static class PaymentExample
 				PgUid: pgUid
 			);
 		}
+
+		public async Task<int> GetPageCount()
+		{
+			WriteLine("페이지 카운트 요청: http://pg.com/payments/page-count");
+			await Task.Delay(50);
+			return _pgDataPaymentPages.Length;
+		}
 	}
 
 	private record Order(long Id, int Amount, bool IsPaid);
@@ -61,7 +68,12 @@ public static class PaymentExample
 		/// <returns></returns>
 		public async Task<Order[]> GetOrders(long[] ids)
 		{
-			WriteLine($"SELECT * FROM orders WHERE IN ({ids}) AND is_paid = true;");
+			if (ids.Length > 5)
+			{
+				throw new Exception($"ID 개수 초과: 최대 5가지까지 요청할 수 있습니다. (전달된 개수: {ids.Length})");
+			}
+
+			WriteLine($"SELECT * FROM orders WHERE IN ({string.Join(",", ids)}) AND is_paid = true;");
 			await Task.Delay(100);
 			return [
 				new Order(Id: 1, Amount: 15000, IsPaid: true),
@@ -75,18 +87,26 @@ public static class PaymentExample
 
 	public static async Task<Payment[]> SyncPayments()
 	{
+		var RATE_LIMIT = 2;
 		var pgApi = new PgApi();
-		var payments = await Enumerable.Range(1, int.MaxValue)
+		var totalPage = await pgApi.GetPageCount();
+
+		var payments = await Enumerable.Range(1, totalPage)
+			.Chunk(RATE_LIMIT) // instead of concurrent function
+			.Select(pages => pages.Select(pgApi.GetPayments))
+			.Select(Task.WhenAll)
 			.ToAsyncEnumerable()
-			.Select(pgApi.GetPayments)
-			.TakeUntilInclusive(payments => payments.Length < 3)
-			.Flat()
+			.SelectMany(paymentsGroup => paymentsGroup.Flat())
 			.ToArray();
 
 		var storeDb = new StoreDB();
-		var orders = await storeDb.GetOrders(
-			payments.Select(p => p.StoreOrderId).ToArray()
-		);
+		var orders = await payments
+			.Select(p => p.StoreOrderId)
+			.Chunk(5)
+			.ToAsyncEnumerable()
+			.Select(storeDb.GetOrders)
+			.Flat()
+			.ToArray();
 
 		var ordersById = orders.Select(order => order.Id).ToHashSet();
 
@@ -100,6 +120,27 @@ public static class PaymentExample
 		   });
 
 		return payments;
+	}
+
+	private static IEnumerable<DateTimeOffset> InfinityTime()
+	{
+		while (true)
+		{
+			yield return DateTimeOffset.Now;
+		}
+	}
+
+	public static async Task RunScheduler()
+	{
+		await InfinityTime()
+			.ToAsyncEnumerable()
+			.ForEach(async now =>
+			{
+				WriteLine();
+				WriteLine($"{now} - Scheduled");
+				WriteLine();
+				await Task.WhenAll([Task.Delay(10000), SyncPayments()]);
+			});
 	}
 }
 
