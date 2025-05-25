@@ -21,5 +21,15 @@
 
 // 5.3
 // await PaymentExample.SyncPayments();
+// await PaymentExample.RunScheduler();
 
-await PaymentExample.RunScheduler();
+// 5.4
+
+// MapReducePatterns();
+// NestedMapPatterns();
+// RenderCalendar(2025, 05);
+// await IteratorForEachPatterns();
+
+// ChunkFlatPatterns();
+
+MapFlatPatterns();

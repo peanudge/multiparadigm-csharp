@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Threading.Tasks;
 using FxCs;
 
@@ -278,6 +279,137 @@ public static partial class Program
 				WriteLine($"TakeUntilInclusive: {a}, {a == 5}");
 				return a == 5;
 			})
+			.ForEach(WriteLine);
+	}
+
+	public static void MapReducePatterns()
+	{
+		Func<string, string> decodeUri = System.Web.HttpUtility.UrlDecode;
+		Func<string, string> encodeUri = System.Web.HttpUtility.UrlEncode;
+
+		var queryString = "key1=value1%7Cvalue2&key2=123";
+
+		var queryObject = queryString
+			.Split("&")
+			.Select(param => param.Split("="))
+			.Where(entry => entry.Length == 2)
+			.Select(entry => entry.Select(decodeUri).ToArray())
+			.ToDictionary(entry => entry[0], entry => entry[1]);
+
+		WriteLine($"{JsonSerializer.Serialize(queryObject)}");
+
+		var deserializedQueryString = queryObject
+			.Select(kvp => (encodeUri(kvp.Key), encodeUri(kvp.Value)))
+			.Select(entry => string.Join("=", [entry.Item1, entry.Item2]))
+			.Aggregate((a, b) => $"{a}&{b}"); // Empty params will be thrown
+
+		WriteLine(deserializedQueryString);
+	}
+
+
+
+	private record struct TreeNode(int Id, TreeNode[] children);
+	public static void NestedMapPatterns()
+	{
+		// Tree Node Transform
+		var tree = new TreeNode[]
+		{
+			new TreeNode(Id: 1, children: [
+				new TreeNode(Id: 2, []),
+				new TreeNode(Id: 3, [])
+			]),
+			new TreeNode(Id: 4, children: [
+				new TreeNode(Id: 5, [])
+			]),
+		};
+
+		var transformedTree = tree
+			.Select(node => new
+			{
+				Name = $"parent-{node.Id}",
+				Children = node.children.Select(child => new { Name = $"child-{child.Id}" })
+			})
+			.ToArray();
+
+		WriteLine(JsonSerializer.Serialize(transformedTree, new JsonSerializerOptions() { WriteIndented = true }));
+	}
+
+
+	private static int[] GetMonthEndDates(DateTime monthEnd)
+		=> monthEnd.DayOfWeek == DayOfWeek.Saturday
+			? []
+			: Enumerable
+				.Range(monthEnd.Day - (int)monthEnd.DayOfWeek, (int)monthEnd.DayOfWeek + 1)
+				.ToArray();
+
+	public static int[][] GenerateCalendar(DateTime prevMonthEnd, DateTime currentMonthEnd)
+		=> Enumerable.Empty<int>()
+			.Concat(GetMonthEndDates(prevMonthEnd))
+			.Concat(Enumerable.Range(1, currentMonthEnd.Day))
+			.Concat(Enumerable.Range(1, (int)DayOfWeek.Saturday - (int)currentMonthEnd.DayOfWeek))
+			.Chunk(7)
+			.ToArray();
+
+	private static string FormatCalendar(int[][] calendarWeeks)
+		=> calendarWeeks
+			.Select(weeks => weeks.Select(day => day < 10 ? $" {day}" : $"{day}"))
+			.Select(weeks => string.Join(" ", weeks))
+			.StringJoin("\n");
+	// .Aggregate((a, b) => $"{a}\n{b}");
+
+	private static DateTime EndDateOfMonth(int year, int month)
+		=> new DateTime(
+			year: year,
+			month: month,
+			day: DateTime.DaysInMonth(year, month)
+		);
+
+	public static void RenderCalendar(int year, int month)
+	{
+		var result = PipeExtensions.Pipe(
+			GenerateCalendar(EndDateOfMonth(year, month - 1), EndDateOfMonth(year, month)),
+			FormatCalendar
+		);
+
+		WriteLine(result);
+	}
+
+	public static void IteratorForEachPatterns()
+	{
+		Enumerable.Range(1, 5)
+			.Select(x => x * 2)
+			.ForEach(x => WriteLine($"Processed: {x}"));
+	}
+
+	public static async Task ChunkFlatPatterns()
+	{
+		var values = await Enumerable.Range(1, 100)
+			.Chunk(5)
+			.ToAsyncEnumerable()
+			.SelectMany(nums => nums)
+			.ToArray();
+
+		values.ForEach(WriteLine);
+	}
+
+
+	private record Comment(int Id, string Text, Comment[] Replies);
+	public static void MapFlatPatterns()
+	{
+		Comment[] comments = [
+			new Comment(1, "First comment", [
+				new Comment(11, "Reply 1-1", [])
+			]),
+			new Comment(2, "Second comment", []),
+			new Comment(3, "Third comment", [
+				new Comment(31, "Reply 3-1", []),
+				new Comment(32, "Reply 3-2", [])
+			]),
+		];
+
+		comments
+			.Select(comment => Enumerable.Empty<Comment>().Concat([comment]).Concat(comment.Replies))
+			.SelectMany(comments => comments)
 			.ForEach(WriteLine);
 	}
 }

@@ -33,6 +33,11 @@ public static class EnumerableExtensions
 		}
 	}
 
+	public static string StringJoin(this IEnumerable<string> source, string sperator)
+	{
+		return string.Join(sperator, source);
+	}
+
 	public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> source)
 	{
 		foreach (var value in source) yield return await Task.FromResult(value);

@@ -156,6 +156,7 @@ public static class Fx
 			yield return value;
 		}
 	}
+
 	public static async IAsyncEnumerable<A> TakeWhile<A>(Func<A, bool> func, IAsyncEnumerable<A> iterable)
 	{
 		var iterator = iterable.GetAsyncEnumerator();
