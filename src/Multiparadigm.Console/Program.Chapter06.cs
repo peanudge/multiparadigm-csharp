@@ -130,4 +130,61 @@ public partial class Program
 
 		WriteLine(menuBoardHtml(menus).ToHtml());
 	}
+
+	public static async Task RunTasksWithPoolByGpt()
+	{
+		Func<Task<string>>[] tasks = [
+			CreateAsyncTask("A", 1000),
+			CreateAsyncTask("B", 500),
+			CreateAsyncTask("C", 800),
+			CreateAsyncTask("D", 300),
+			CreateAsyncTask("E", 1200),
+		];
+
+		var poolSize = 2;
+		var results = await RunTasksWithPool_ByGPT(tasks, poolSize);
+		WriteLine($"Results: {string.Join(", ", results)}");
+	}
+
+
+	static Func<Task<string>> CreateAsyncTask(string name, int ms)
+	{
+		return async () =>
+		{
+			WriteLine($"Started: {name}");
+			await Task.Delay(ms);
+			WriteLine($"Finshed: {name}");
+			return name;
+		};
+	}
+
+
+	//https://kwangyulseo.wordpress.com/2015/06/25/%ec%99%9c-%eb%b3%80%ec%88%98%ea%b0%80-%eb%82%98%ec%81%9c%ea%b0%80/
+	static async Task<T[]> RunTasksWithPool_ByGPT<T>(Func<Task<T>>[] funcs, int poolSize)
+	{
+		T[] results = new T[funcs.Length];
+		List<Task> activeTasks = [];
+
+		for (var i = 0; i < funcs.Length; i++)
+		{
+			var taskFactory = funcs[i];
+			var task = Task.Run(async () =>
+			{
+				var n = i;
+				results[n] = await taskFactory();
+				WriteLine($"results[{n}]: {results[n]}");
+			});
+
+			activeTasks.Add(task);
+
+			if (activeTasks.Count() >= poolSize)
+			{
+				var finshedTask = await Task.WhenAny(activeTasks);
+				activeTasks.Remove(finshedTask);
+			}
+		}
+
+		await Task.WhenAll(activeTasks);
+		return results;
+	}
 }

@@ -39,6 +39,10 @@
 // NestDataComponentExample_Solution();
 // HtmlFromArrayExample(); 
 // HtmlFromArrayExample_Solution_1();
-HtmlFromArrayExample_Solution_2();
+// HtmlFromArrayExample_Solution_2();
+
+
+// 6.2
+await RunTasksWithPoolByGpt();
 
 
