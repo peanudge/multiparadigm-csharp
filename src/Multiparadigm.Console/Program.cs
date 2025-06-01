@@ -36,5 +36,9 @@
 // TaggedTemplateExample();
 // EsacpeHtmlText();
 // NestDataComponentExample();
-NestDataComponentExample_Solution();
+// NestDataComponentExample_Solution();
+// HtmlFromArrayExample();
+// WriteLine();
+HtmlFromArrayExample_Solution();
+
 
