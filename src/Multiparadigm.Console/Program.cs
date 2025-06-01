@@ -37,8 +37,8 @@
 // EsacpeHtmlText();
 // NestDataComponentExample();
 // NestDataComponentExample_Solution();
-// HtmlFromArrayExample();
-// WriteLine();
-HtmlFromArrayExample_Solution();
+// HtmlFromArrayExample(); 
+// HtmlFromArrayExample_Solution_1();
+HtmlFromArrayExample_Solution_2();
 
 

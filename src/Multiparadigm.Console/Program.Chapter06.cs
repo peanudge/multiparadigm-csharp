@@ -87,7 +87,7 @@ public partial class Program
 		WriteLine(menuBoardHtml(menus).ToHtml());
 	}
 
-	public static void HtmlFromArrayExample_Solution()
+	public static void HtmlFromArrayExample_Solution_1()
 	{
 		var menuHtml = (Menu menu) => Html($"<li>{menu.Name} ({menu.Price})</li>");
 		var menus = new Menu[]{
@@ -102,6 +102,28 @@ public partial class Program
 			<h1>메뉴 목록</h1>
 			<ul>
 				{menus.Select(menuHtml).Aggregate((a, b) => Html($"{a}{b}"))}
+			</ul>
+		</div>
+		""");
+
+		WriteLine(menuBoardHtml(menus).ToHtml());
+	}
+
+	public static void HtmlFromArrayExample_Solution_2()
+	{
+		var menuHtml = (Menu menu) => Html($"<li>{menu.Name} ({menu.Price})</li>");
+		var menus = new Menu[]{
+			new Menu("아메리카노", 4500),
+			new Menu("카푸치노", 5000),
+			new Menu("라떼 & 쿠키 세트", 8000),
+		};
+
+		// INFO: HtmlComponent간의 결합 방법을 제공해서 Escape를 구분.
+		var menuBoardHtml = (Menu[] menus) => Html($"""
+		<div>
+			<h1>메뉴 목록</h1>
+			<ul>
+				{menus.Select(menuHtml)}
 			</ul>
 		</div>
 		""");

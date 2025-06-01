@@ -54,13 +54,28 @@ public class HtmlComponent
 			? htmlComponent.ToHtml()
 			: HtmlHelper.Escape(val);
 
+	private object Combine(object vals)
+	{
+		if (vals is IEnumerable<HtmlComponent> htmlComponents)
+		{
+			return htmlComponents.Aggregate(
+				TemplateEngine.Html(""),
+				(a, b) => TemplateEngine.Html($"{a}{b}")
+			);
+		}
+		else
+		{
+			return vals;
+		}
+	}
+
 	public string ToHtml()
 	{
 		return _vals
-			.Select(Escape)
+			.Select(val => Escape(Combine(val)))
 			.Append("")
 			.Zip(_strs, (val, str) => new string[] { str, val })
-			.SelectMany(pair => pair)
+			.SelectMany(pair => pair) // Flat
 			.Aggregate("", (a, b) => a + b);
 	}
 }
