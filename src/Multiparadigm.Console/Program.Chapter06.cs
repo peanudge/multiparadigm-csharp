@@ -187,4 +187,71 @@ public partial class Program
 		await Task.WhenAll(activeTasks);
 		return results;
 	}
+
+
+
+	public static async Task RunTasksWithPool_ByMultiParadigm()
+	{
+		Func<Task<string>>[] tasks = [
+			CreateAsyncTask("A", 1000),
+			CreateAsyncTask("B", 500),
+			CreateAsyncTask("C", 800),
+			CreateAsyncTask("D", 300),
+			CreateAsyncTask("E", 1200),
+		];
+
+		var poolSize = 2;
+		var results = await RunTasksWithPool(tasks, poolSize);
+		WriteLine($"Results: {string.Join(", ", results)}");
+	}
+
+	private static async Task<T[]> RunTasksWithPool<T>(Func<Task<T>>[] fs, int poolSize)
+	{
+		var tasks = fs.Select(f => new TaskRunner<T>(f)).ToArray();
+		List<TaskRunner<T>> pool = [];
+		foreach (var nextTask in tasks)
+		{
+			// Pool에 작업을 PoolSize 만큼 추가
+			pool.Add(nextTask);
+			if (pool.Count < poolSize) continue;
+			// 현재 풀에 있는 작업을 시작하고 하나가 끝날 때까지 대기
+			await Task.WhenAny(pool.Select(task => task.Run()));
+			// 완료된 작업 제거
+			var completedTask = pool.FirstOrDefault(task => task.IsDone);
+			if (completedTask is not null)
+			{
+				pool.Remove(completedTask);
+			}
+		}
+		return await Task.WhenAll(tasks.Select(task => task.Task));
+	}
+
+	private class TaskRunner<T>
+	{
+		private Func<Task<T>> _f;
+		private Task<T>? _task = null;
+		public Task<T> Task => _task ?? Run();
+		private bool _isDone = false;
+		public bool IsDone => _isDone;
+
+		public TaskRunner(Func<Task<T>> f)
+		{
+			_f = f;
+		}
+
+		public Task<T> Run()
+		{
+			if (_task != null)
+			{
+				return _task;
+			}
+
+			_task = _f().ContinueWith(prevTask =>
+			{
+				_isDone = true;
+				return prevTask.Result;
+			}, TaskContinuationOptions.OnlyOnRanToCompletion);
+			return _task;
+		}
+	}
 }

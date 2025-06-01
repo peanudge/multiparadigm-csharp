@@ -43,6 +43,8 @@
 
 
 // 6.2
-await RunTasksWithPoolByGpt();
+// await RunTasksWithPoolByGpt();
+
+await RunTasksWithPool_ByMultiParadigm();
 
 
