@@ -42,7 +42,7 @@ public partial class Program
 			<li>{a}</li>
 			<li>{b}</li>
 			{menuHtml(menu)}
-			{Html_Naive($"<li>{Html_Navie("<b>3단계 중첩</b>")}</li>")}
+			{Html_Naive($"<li>{Html_Naive("<b>3단계 중첩</b>")}</li>")}
 		</ul>
 		""");
 		WriteLine(result);

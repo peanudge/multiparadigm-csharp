@@ -9,32 +9,34 @@ using System.Text.RegularExpressions;
 
 public class TemplateEngine
 {
+	public static HtmlComponent Html(TaggedInterpolatedStringHandler handler)
+		=> new HtmlComponent(handler.Strs, handler.Vals);
+
+	public static HtmlComponent Html(string text)
+		=> new HtmlComponent([text], []);
+
 	public static string Html_Naive(TaggedInterpolatedStringHandler builder)
 	{
 		var vals = builder.Vals;
 		var strs = builder.Strs;
 		Debug.Assert(strs.Length + 1 > vals.Length || vals.Length >= strs.Length);
 		return vals
+			.Select(HtmlUtils.Escape)
 			.Append(string.Empty)
 			.Zip(strs, (val, str) => new object[] { str, val })
 			.SelectMany(pair => pair)
 			.Aggregate(string.Empty, (a, b) => a + b);
 	}
 
-	public static string Html_Navie(string msg)
+	public static string Html_Naive(string msg)
 		=> msg;
 
-	public static HtmlComponent Html(TaggedInterpolatedStringHandler handler)
-	{
-
-		return new HtmlComponent(handler.Strs, handler.Vals);
-	}
-
-	public static HtmlComponent Html(string text)
-		=> new HtmlComponent([text], []);
 }
 
 
+// 구조적인 문제는 객체지향적으로 해결한다는 의미는 구조적인 문제에 객체지향의 특성들이 굉장히 유용합니다.
+// Encapsulation, Abstraction, Override
+// 즉, 여기서는 Escape하는 방법은 언제든지 교체할 수 있습니다. (access modifier가 private인것을 주목한다면요)
 public class HtmlComponent
 {
 	private string[] _strs;
@@ -46,13 +48,10 @@ public class HtmlComponent
 		_vals = vals;
 	}
 
-	// 구조적인 문제는 객체지향적으로 해결한다는 의미는 구조적인 문제에 객체지향의 특성들이 굉장히 유용합니다.
-	// Encapsulation, Abstraction, Override
-	// 즉, 여기서는 Escape하는 방법은 언제든지 교체할 수 있습니다. (access modifier가 private인것을 주목한다면요)
 	private string Escape(object val)
 		=> val is HtmlComponent htmlComponent
 			? htmlComponent.ToHtml()
-			: HtmlHelper.Escape(val);
+			: HtmlUtils.Escape(val);
 
 	private object Combine(object vals)
 	{
@@ -70,20 +69,19 @@ public class HtmlComponent
 	}
 
 	public string ToHtml()
-	{
-		return _vals
-			.Select(val => Escape(Combine(val)))
+		=> _vals
+			.Select(Combine)
+			.Select(Escape)
 			.Append("")
 			.Zip(_strs, (val, str) => new string[] { str, val })
-			.SelectMany(pair => pair) // Flat
+			.SelectMany(pair => pair)
 			.Aggregate("", (a, b) => a + b);
-	}
 }
 
 
-public static class HtmlHelper
+public static class HtmlUtils
 {
-	private static Dictionary<string, string> EscapeMap = new()
+	private static Dictionary<string, string> EscapeCharMap = new()
 	{
 		{"&", "&amp;"},
 		{"<", "&lt;"},
@@ -93,13 +91,13 @@ public static class HtmlHelper
 		{"`", "&#x60;"}
 	};
 
-	private static Regex EscapableRegExp = new("(?:" + string.Join("|", EscapeMap.Keys) + ")");
+	private static Regex EscapableRegExp = new("(?:" + string.Join("|", EscapeCharMap.Keys) + ")");
 
 	public static string Escape(object input)
 	{
 		var str = $"{input}";
 		return EscapableRegExp.IsMatch(str)
-			? EscapableRegExp.Replace(str, (match) => EscapeMap[match.Value])
+			? EscapableRegExp.Replace(str, (match) => EscapeCharMap[match.Value])
 			: str;
 	}
 }
