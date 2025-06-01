@@ -29,7 +29,10 @@
 // NestedMapPatterns();
 // RenderCalendar(2025, 05);
 // await IteratorForEachPatterns();
-
 // ChunkFlatPatterns();
+// MapFlatPatterns();
 
-MapFlatPatterns();
+// 6.1
+// TaggedTemplateExample();
+
+EsacpeHtmlText();
