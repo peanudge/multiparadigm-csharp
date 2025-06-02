@@ -190,7 +190,7 @@ public partial class Program
 
 
 
-	public static async Task RunTasksWithPool_ByMultiParadigm()
+	public static async Task RunTasksWithPool_MultiParadigm()
 	{
 		Func<Task<string>>[] tasks = [
 			CreateAsyncTask("A", 1000),
@@ -215,7 +215,7 @@ public partial class Program
 			pool.Add(nextTask);
 			if (pool.Count < poolSize) continue;
 			// 현재 풀에 있는 작업을 시작하고 하나가 끝날 때까지 대기
-			await Task.WhenAny(pool.Select(task => task.Run()));
+			await Task.WhenAny(pool.Select((task) => task.Run()));
 			// 완료된 작업 제거
 			var completedTask = pool.FirstOrDefault(task => task.IsDone);
 			if (completedTask is not null)
