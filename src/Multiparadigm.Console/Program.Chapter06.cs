@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using static TemplateEngine;
 
 public partial class Program
@@ -147,13 +148,17 @@ public partial class Program
 	}
 
 
-	static Func<Task<string>> CreateAsyncTask(string name, int ms)
+	static Func<Task<string>> CreateAsyncTask(string name, int ms, bool broken = false)
 	{
 		return async () =>
 		{
-			WriteLine($"Started: {name}");
+			// WriteLine($"Started: {name}");
 			await Task.Delay(ms);
-			WriteLine($"Finshed: {name}");
+			// WriteLine($"Finshed: {name}");
+			if (broken)
+			{
+				throw new Exception("No");
+			}
 			return name;
 		};
 	}
@@ -246,12 +251,166 @@ public partial class Program
 				return _task;
 			}
 
-			_task = _f().ContinueWith(prevTask =>
+			return _task = _f().ContinueWith(t =>
 			{
 				_isDone = true;
-				return prevTask.Result;
-			}, TaskContinuationOptions.OnlyOnRanToCompletion);
-			return _task;
+				return t.Result;
+			});
 		}
+	}
+
+
+	public static async Task InfinityTaskPoolExample()
+	{
+		var result = await new TaskPool<int>(
+				fs: InfinityRange().Select(CrawlingFn),
+				poolSize: 5)
+			.RunAllSettled();
+
+		result.ForEach((t) => { WriteLine($"Task {t.Result} - {t.Status}"); });
+	}
+	private static IEnumerable<int> InfinityRange() => Enumerable.Range(1, int.MaxValue);
+	private static Func<Task<int>> CrawlingFn(int page) => () => Crawling(page);
+
+	private static async Task<int> Crawling(int page)
+	{
+		WriteLine($"{page} 페이지 분석 시작");
+		await Task.Delay(5000);
+		WriteLine($"{page} 페이지 저장 완료");
+		return page;
+	}
+
+	private class TaskPool<T>
+	{
+		private IEnumerator<TaskRunner<T>> _tasks;
+		private int _poolSize;
+		private List<TaskRunner<T>> _pool = [];
+
+		public TaskPool(IEnumerable<Func<Task<T>>> fs, int poolSize)
+		{
+			_tasks = fs.Select(f => new TaskRunner<T>(f)).GetEnumerator();
+			_poolSize = poolSize;
+		}
+
+		public void SetPoolSize(int poolSize) { _poolSize = poolSize; }
+
+		private bool CanExpandPool()
+		{
+			return _pool.Count < _poolSize;
+		}
+
+		public async Task<Task<T>[]> Run(Action<Exception>? errorHandler = null)
+		{
+			List<TaskRunner<T>> resultTasks = [];
+			while (true)
+			{
+				var hasNextTask = _tasks.MoveNext();
+				if (hasNextTask)
+				{
+					_pool.Add(_tasks.Current);
+					resultTasks.Add(_tasks.Current);
+					if (CanExpandPool()) continue;
+				}
+
+				if (!hasNextTask && _pool.Count == 0) break;
+
+				var completedTask = await Task.WhenAny(_pool.Select(task => task.Run()));
+				try
+				{
+					await completedTask;
+				}
+				catch (AggregateException ex)
+				{
+					errorHandler?.Invoke(ex.InnerExceptions[0]);
+				}
+
+				_pool.Remove(_pool.First(task => task.IsDone));
+			}
+
+			return resultTasks.Select(task => task.Task).ToArray();
+		}
+
+		public async Task<T[]> RunAll()
+		{
+			var tasks = await Run(errorHandler: (error) => { throw error; });
+			return await Task.WhenAll(tasks);
+		}
+
+		public Task<Task<T>[]> RunAllSettled() => Run(error => { /* Nothing */ });
+	}
+
+
+	public static async Task RunAllTestExample()
+	{
+		Func<Task<string>>[] taskFuncs = [
+			CreateAsyncTask("A", 1000),
+			() => CreateAsyncTask("B", 1000, broken: true)(),
+			CreateAsyncTask("C", 1000),
+			CreateAsyncTask("D", 1000),
+			CreateAsyncTask("E", 1000),
+		];
+
+		try
+		{
+			var result = await new TaskPool<string>(taskFuncs, 2).RunAll();
+			WriteLine(string.Join(", ", result));
+		}
+		catch (Exception e)
+		{
+			WriteLine(e.Message);
+		}
+	}
+
+	public static async Task RunAllSettledTestExample()
+	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
+		Func<Task<string>>[] taskFuncs = [
+			CreateAsyncTask("A", 1000),
+			() => CreateAsyncTask("B", 300, broken: true)(),
+			CreateAsyncTask("C", 1000),
+			CreateAsyncTask("D", 1000),
+			CreateAsyncTask("E", 1000),
+		];
+
+		var tasks = await new TaskPool<string>(taskFuncs, 3).RunAllSettled();
+		stopWatch.Stop();
+		WriteLine($"Elapsed: {stopWatch.ElapsedMilliseconds} ms");
+		tasks.ForEach(task => WriteLine(task.Status));
+	}
+
+	private static Func<Task<int>> CreateCrawler(int page)
+		=> () => page == 7
+			? Task.FromException<int>(new Exception($"{page}"))
+			: Crawling(page);
+
+	public static async Task RunAllTestExample2()
+	{
+		try
+		{
+			await new TaskPool<int>(InfinityRange().Select(CreateCrawler), 5).RunAll();
+		}
+		catch (Exception e)
+		{
+			WriteLine($"Crawling 중간에 실패! ({e.Message} Page)");
+		}
+	}
+
+	public static async Task RunAllSettledTestExample2()
+	{
+		var stopWatch = new Stopwatch();
+		stopWatch.Start();
+		WriteLine($"{stopWatch.Elapsed} - Start");
+		var taskPool = new TaskPool<int>(InfinityRange().Select(CreateCrawler), 2);
+		_ = taskPool.RunAllSettled();
+
+		await Task.Delay(10_000);
+
+		taskPool.SetPoolSize(10);
+		WriteLine($"{stopWatch.Elapsed} - PoolSize Changed To {5}");
+
+		await Task.Delay(10_000);
+
+		WriteLine($"{stopWatch.Elapsed} - End");
 	}
 }

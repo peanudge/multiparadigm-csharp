@@ -45,6 +45,12 @@
 // 6.2
 // await RunTasksWithPoolByGpt();
 
-await RunTasksWithPool_MultiParadigm();
+// await RunTasksWithPool_MultiParadigm();
+// await InfinityTaskPoolExample();
+// await RunAllTestExample();
+// await RunAllSettledTestExample();
+// await RunAllTestExample2();
+
+await RunAllSettledTestExample2();
 
 
